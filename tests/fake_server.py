@@ -232,10 +232,6 @@ def get_installs_report(app_id):
 
 def extract_from_and_to_datetimes(request):
 
-    # TODO: This should fail if TO or FROM are missing
-
-    now = datetime.datetime.now()
-
     if "from" in request.query:
         from_datetime = extract_datetime_from_param(request.query["from"])
     else:
