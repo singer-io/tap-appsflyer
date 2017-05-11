@@ -288,7 +288,7 @@ def sync_installs():
 def sync_in_app_events():
 
     schema = load_schema("raw_data/in_app_events")
-    singer.write_schema("installs", schema, ["id"])
+    singer.write_schema("in_app_events", schema, ["id"])
 
     # This order matters
     fieldnames = (
@@ -440,7 +440,6 @@ def do_sync():
     for stream in streams:
         LOGGER.info('Syncing %s', stream.name)
         STATE["this_stream"] = stream.name
-        singer.write_state(STATE)
         stream.sync() # pylint: disable=not-callable
     STATE["this_stream"] = None
     singer.write_state(STATE)
