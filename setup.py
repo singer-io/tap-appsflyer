@@ -22,14 +22,16 @@ setup(
             'faker'
         ]
     },
-    entry_points='''
-          [console_scripts]
-          tap-appsflyer=tap_appsflyer:main
-      ''',
+    entry_points={
+        'console_scripts': [
+            'tap-appsflyer=tap_appsflyer:main'
+        ]
+    },
     packages=['tap_appsflyer'],
     package_data={
-        'tap_appsflyer/schemas': [
-            "raw_data/installations.json",
+        'tap_appsflyer/schemas/raw_data': [
+            'installations.json',
+            'in_app_events.json'
         ],
     },
     include_package_data=True,
