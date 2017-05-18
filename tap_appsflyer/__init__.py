@@ -156,7 +156,11 @@ class RequestToCsvAdapter:
 def sync_installs():
 
     schema = load_schema("raw_data/installations")
-    singer.write_schema("installs", schema, ["id"])
+    singer.write_schema("installs", schema, [
+        "event_time",
+        "event_name",
+        "appsflyer_id"
+    ])
 
     # This order matters
     fieldnames = (
@@ -288,7 +292,11 @@ def sync_installs():
 def sync_in_app_events():
 
     schema = load_schema("raw_data/in_app_events")
-    singer.write_schema("in_app_events", schema, ["id"])
+    singer.write_schema("in_app_events", schema, [
+        "event_time",
+        "event_name",
+        "appsflyer_id"
+    ])
 
     # This order matters
     fieldnames = (
