@@ -14,6 +14,8 @@ from bottle import run
 from faker import Factory
 
 
+# TODO: Add two-month timeframe limitation
+
 headings = [
     # 0
     "Attributed Touch Type",
