@@ -35,6 +35,7 @@
     },
     "is_retargeting": {
       "type": [
+        "null",
         "boolean"
       ]
     },
@@ -343,7 +344,7 @@
     "customer_user_id": {
       "type": [
         "null",
-        "string"
+        "integer"
       ]
     },
     "imei": {
@@ -452,7 +453,7 @@
     "is_receipt_validated": {
       "type": [
         "null",
-        "string"
+        "boolean"
       ]
     },
     "postal_code": {
@@ -482,7 +483,7 @@
     "is_primary_attribution": {
       "type": [
         "null",
-        "string"
+        "boolean"
       ]
     },
     "af_sub_siteid": {
