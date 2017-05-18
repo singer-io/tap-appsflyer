@@ -49,6 +49,10 @@ def get_start(key):
     return datetime.datetime.now() - datetime.timedelta(days=30)
 
 
+def get_stop(start_datetime):
+    return min(start_datetime + datetime.timedelta(days=30), datetime.datetime.now())
+
+
 def get_base_url():
     if "base_url" in CONFIG:
         return CONFIG["base_url"]
@@ -248,7 +252,7 @@ def sync_installs():
     )
 
     from_datetime = get_start("installs")
-    to_datetime = datetime.datetime.now()
+    to_datetime = get_stop(from_datetime)
 
     if to_datetime < from_datetime:
         LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
@@ -384,7 +388,7 @@ def sync_in_app_events():
     )
 
     from_datetime = get_start("in_app_events")
-    to_datetime = datetime.datetime.now()
+    to_datetime = get_stop(from_datetime)
 
     if to_datetime < from_datetime:
         LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
