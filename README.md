@@ -10,4 +10,4 @@ This tap:
 
 ---
 
-Copyright &copy; 2017 ezCater, Inc.
+Copyright &copy; 2017 Stitch, Inc.
