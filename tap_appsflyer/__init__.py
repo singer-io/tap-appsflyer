@@ -83,13 +83,19 @@ def xform_empty_strings_to_none(record):
         if value == "":
             record[key] = None
 
+def xform_string_to_integer(record, field_name):
+	try:
+		record[field_name] = int(record[field_name])
+	except:
+	    raise ValueError("Cannot cast to int")
 
 def xform(record, schema):
     xform_empty_strings_to_none(record)
     xform_boolean_field(record, "wifi")
     xform_boolean_field(record, "is_retargeting")
+    xform_string_to_integer(record, "customer_user_id")
     return transform.transform(record, schema)
-
+	
 
 @attr.s
 class Stream(object):
