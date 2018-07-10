@@ -404,7 +404,6 @@ def sync_in_app_events():
         singer.write_record("in_app_events", record)
         # AppsFlyer returns records in order of most recent first.
         if utils.strptime(record["event_time"]) > bookmark:
-            LOGGER.info("replacing bookmark!")
             bookmark = utils.strptime(record["event_time"])
 
     # Write out state
