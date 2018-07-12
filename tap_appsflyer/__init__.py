@@ -49,8 +49,8 @@ def get_start(key):
     return datetime.datetime.now() - datetime.timedelta(days=30)
 
 
-def get_stop(start_datetime):
-    return min(start_datetime + datetime.timedelta(days=30), datetime.datetime.now())
+def get_stop(start_datetime, stop_time, days=30):
+    return min(start_datetime + datetime.timedelta(days=days), stop_time)
 
 
 def get_base_url():
@@ -252,7 +252,7 @@ def sync_installs():
     )
 
     from_datetime = get_start("installs")
-    to_datetime = get_stop(from_datetime)
+    to_datetime = get_stop(from_datetime, datetime.datetime.now())
 
     if to_datetime < from_datetime:
         LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
@@ -378,37 +378,40 @@ def sync_in_app_events():
         "original_url",
     )
 
+    stop_time = datetime.datetime.now()
     from_datetime = get_start("in_app_events")
-    to_datetime = get_stop(from_datetime)
+    to_datetime = get_stop(from_datetime, stop_time, 10)
 
-    if to_datetime < from_datetime:
-        LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
-        return
+    while to_datetime <= stop_time:
+        LOGGER.info("Syncing data from %s to %s", from_datetime, to_datetime)
+        params = dict()
+        params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
+        params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
+        params["api_token"] = CONFIG["api_token"]
 
-    params = dict()
-    params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
-    params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
-    params["api_token"] = CONFIG["api_token"]
+        url = get_url("in_app_events", app_id=CONFIG["app_id"])
+        request_data = request(url, params)
 
-    url = get_url("in_app_events", app_id=CONFIG["app_id"])
-    request_data = request(url, params)
+        csv_data = RequestToCsvAdapter(request_data)
+        reader = csv.DictReader(csv_data, fieldnames)
 
-    csv_data = RequestToCsvAdapter(request_data)
-    reader = csv.DictReader(csv_data, fieldnames)
+        next(reader) # Skip the heading row
 
-    next(reader) # Skip the heading row
+        bookmark = from_datetime
+        for i, row in enumerate(reader):
+            record = xform(row, schema)
+            singer.write_record("in_app_events", record)
+            # AppsFlyer returns records in order of most recent first.
+            if utils.strptime(record["event_time"]) > bookmark:
+                bookmark = utils.strptime(record["event_time"])
 
-    bookmark = from_datetime
-    for i, row in enumerate(reader):
-        record = xform(row, schema)
-        singer.write_record("in_app_events", record)
-        # AppsFlyer returns records in order of most recent first.
-        if utils.strptime(record["event_time"]) > bookmark:
-            bookmark = utils.strptime(record["event_time"])
+        # Write out state
+        utils.update_state(STATE, "in_app_events", bookmark)
+        singer.write_state(STATE)
 
-    # Write out state
-    utils.update_state(STATE, "in_app_events", bookmark)
-    singer.write_state(STATE)
+        # Move the timings forward
+        from_datetime = to_datetime
+        to_datetime = get_stop(from_datetime, stop_time, 10)
 
 
 STREAMS = [
