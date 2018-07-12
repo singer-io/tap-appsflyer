@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.5
+  * Syncing in-app-events would take too long so cut the window down and iterate forward [#7](https://github.com/singer-io/tap-appsflyer/pull/7)
+
 ## 0.0.3
   * Updated the schema for installations to set 'customer_user_id' to allow a string value [#5](https://github.com/singer-io/tap-appsflyer/pull/5)
 

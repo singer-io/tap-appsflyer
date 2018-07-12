@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='tap-appsflyer',
-    version='0.0.4',
+    version='0.0.5',
     description='Singer.io tap for extracting data from the AppsFlyer API',
     author='Stitch, Inc.',
     url='http://singer.io',
