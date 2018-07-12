@@ -411,7 +411,7 @@ def sync_in_app_events():
 
         # Move the timings forward
         from_datetime = to_datetime
-        to_datetime = get_stop(from_datetime, stop_time)
+        to_datetime = get_stop(from_datetime, stop_time, 10)
 
 
 STREAMS = [
