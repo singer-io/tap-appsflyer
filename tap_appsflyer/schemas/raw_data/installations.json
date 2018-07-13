@@ -140,14 +140,12 @@
         "null",
         "string"
       ],
-      "format": "uri"
     },
     "original_url": {
       "type": [
         "null",
         "string"
       ],
-      "format": "uri"
     },
     "user_agent": {
       "type": [
