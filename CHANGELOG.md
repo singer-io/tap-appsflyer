@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.6
+  * Remove the `"format": "uri"` elements from installations json schema
+
 ## 0.0.5
   * Syncing in-app-events would take too long so cut the window down and iterate forward [#7](https://github.com/singer-io/tap-appsflyer/pull/7)
 
