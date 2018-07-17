@@ -139,13 +139,13 @@
       "type": [
         "null",
         "string"
-      ],
+      ]
     },
     "original_url": {
       "type": [
         "null",
         "string"
-      ],
+      ]
     },
     "user_agent": {
       "type": [

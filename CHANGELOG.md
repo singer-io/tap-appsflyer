@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.7
+  * Fix syntax error in `installations.json` schema from 0.0.6
+
 ## 0.0.6
   * Remove the `"format": "uri"` elements from installations json schema
 
