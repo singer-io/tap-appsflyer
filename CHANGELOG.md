@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.8
+  * Allow booleans to be `None` in traqnsform code [#9](https://github.com/singer-io/tap-appsflyer/pull/9)
+
 ## 0.0.7
   * Fix syntax error in `installations.json` schema from 0.0.6
 
