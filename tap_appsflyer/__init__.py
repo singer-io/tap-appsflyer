@@ -72,7 +72,11 @@ def xform_datetime_field(record, field_name):
 
 
 def xform_boolean_field(record, field_name):
-    if record[field_name].lower() == "TRUE".lower():
+    value = record[field_name]
+    if value is None:
+        return
+
+    if value.lower() == "TRUE".lower():
         record[field_name] = True
     else:
         record[field_name] = False
