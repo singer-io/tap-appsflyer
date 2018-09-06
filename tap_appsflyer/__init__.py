@@ -386,7 +386,7 @@ def sync_in_app_events():
     from_datetime = get_start("in_app_events")
     to_datetime = get_stop(from_datetime, stop_time, 10)
 
-    while to_datetime <= stop_time:
+    while from_datetime < stop_time:
         LOGGER.info("Syncing data from %s to %s", from_datetime, to_datetime)
         params = dict()
         params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
