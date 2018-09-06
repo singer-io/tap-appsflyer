@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.9
+  * Fixes infinite loop on `in_app_events` stream [#11](https://github.com/singer-io/tap-appsflyer/pull/11)
+
 ## 0.0.8
   * Allow booleans to be `None` in traqnsform code [#9](https://github.com/singer-io/tap-appsflyer/pull/9)
 
