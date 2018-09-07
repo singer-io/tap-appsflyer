@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.10
+  * Remove `"format": "uri"` from in_app_events schema [#12](https://github.com/singer-io/tap-appsflyer/pull/12)
+
 ## 0.0.9
   * Fixes infinite loop on `in_app_events` stream [#11](https://github.com/singer-io/tap-appsflyer/pull/11)
 
