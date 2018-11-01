@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.11
+  * Updates `requests` to version `2.20.0` in response to CVE 2018-18074 [#13](https://github.com/singer-io/tap-appsflyer/pull/13)
+
 ## 0.0.10
   * Remove `"format": "uri"` from in_app_events schema [#12](https://github.com/singer-io/tap-appsflyer/pull/12)
 
