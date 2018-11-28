@@ -12,7 +12,6 @@ import backoff
 import requests
 import singer
 
-from singer import transform
 from singer import utils
 
 
@@ -92,7 +91,7 @@ def xform(record, schema):
     xform_empty_strings_to_none(record)
     xform_boolean_field(record, "wifi")
     xform_boolean_field(record, "is_retargeting")
-    return transform.transform(record, schema)
+    return singer.transform(record, schema)
 
 
 @attr.s
