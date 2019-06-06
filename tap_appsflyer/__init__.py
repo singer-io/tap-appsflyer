@@ -22,7 +22,7 @@ SESSION = requests.Session()
 
 CONFIG = {
     "app_id": None,
-    "api_token": None,
+    "api_token": None
 }
 
 
@@ -382,7 +382,7 @@ def sync_organic_installs():
         "original_url",
     )
 
-    from_datetime = get_start("organic_installations")
+    from_datetime = get_start("organic_installs")
     to_datetime = get_stop(from_datetime, datetime.datetime.now())
 
     if to_datetime < from_datetime:
@@ -547,14 +547,16 @@ def sync_in_app_events():
 
 STREAMS = [
     Stream("installs", sync_installs),
-    Stream("in_app_events", sync_in_app_events),
-    Stream("organic_installs", sync_organic_installs)
+    Stream("in_app_events", sync_in_app_events)
 ]
 
 
 def get_streams_to_sync(streams, state):
     target_stream = state.get("this_stream")
     result = streams
+    if "organic_installs" in CONFIG:
+        if CONFIG["organic_installs"]:
+            result.append(Stream("organic_installs", sync_organic_installs))
     if target_stream:
         result = list(itertools.dropwhile(lambda x: x.name != target_stream, streams))
     if not result:
@@ -579,7 +581,7 @@ def main():
     args = utils.parse_args(
         [
             "app_id",
-            "api_token",
+            "api_token"
         ])
 
     CONFIG.update(args.config)
