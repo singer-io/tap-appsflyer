@@ -407,8 +407,8 @@ def sync_organic_installs():
         record = xform(row, schema)
         singer.write_record("organic_installs", record)
         # AppsFlyer returns records in order of most recent first.
-        # if utils.strptime(record["event_time"]) > bookmark:
-        #     bookmark = utils.strptime(record["event_time"]) TODO:find a record
+        if utils.strptime(record["event_time"]) > bookmark:
+            bookmark = utils.strptime(record["event_time"])
 
     # Write out state
     utils.update_state(STATE, "organic_installs", bookmark)
