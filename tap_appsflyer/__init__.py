@@ -406,9 +406,6 @@ def sync_organic_installs():
     for i, row in enumerate(reader):
         record = xform(row, schema)
         singer.write_record("organic_installs", record)
-        # # AppsFlyer returns records in order of most recent first.
-        # if utils.strptime(record["attributed_touch_time"]) > bookmark:
-        #     bookmark = utils.strptime(record["attributed_touch_time"]) // TODO: what is this
 
     # Write out state
     utils.update_state(STATE, "organic_installs", bookmark)
