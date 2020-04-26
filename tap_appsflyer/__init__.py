@@ -281,8 +281,11 @@ def sync_installs():
         record = xform(row, schema)
         singer.write_record("installs", record)
         # AppsFlyer returns records in order of most recent first.
-        if utils.strptime(record["attributed_touch_time"]) > bookmark:
-            bookmark = utils.strptime(record["attributed_touch_time"])
+        try:
+            if utils.strptime(record["attributed_touch_time"]) > bookmark:
+                bookmark = utils.strptime(record["attributed_touch_time"])
+        except:
+            LOGGER.error("failed to get attributed_touch_time")
 
     # Write out state
     utils.update_state(STATE, "installs", bookmark)
