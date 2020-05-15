@@ -11,8 +11,7 @@ import attr
 import backoff
 import requests
 import singer
-import singer.stats
-from singer import transform
+
 from singer import utils
 
 
@@ -92,7 +91,7 @@ def xform(record, schema):
     xform_empty_strings_to_none(record)
     xform_boolean_field(record, "wifi")
     xform_boolean_field(record, "is_retargeting")
-    return transform.transform(record, schema)
+    return singer.transform(record, schema)
 
 
 @attr.s
@@ -139,9 +138,9 @@ def request(url, params=None):
     req = requests.Request("GET", url, params=params, headers=headers).prepare()
     LOGGER.info("GET %s", req.url)
 
-    with singer.stats.Timer(source=parse_source_from_url(url)) as stats:
+    with singer.metrics.http_request_timer(parse_source_from_url(url)) as timer:
         resp = SESSION.send(req)
-        stats.http_status_code = resp.status_code
+        timer.tags[singer.metrics.Tag.http_status_code] = resp.status_code
 
     if resp.status_code >= 400:
         LOGGER.error("GET %s [%s - %s]", req.url, resp.status_code, resp.content)
