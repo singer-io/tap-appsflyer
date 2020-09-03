@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.12
+  * Adds safety try/catch to bookmarking logic for when `attributed_touch_time` does not exist on `installs` stream rows [#24](https://github.com/singer-io/tap-appsflyer/pull/24)
+
 ## 0.0.11
   * Updates `requests` to version `2.20.0` in response to CVE 2018-18074 [#13](https://github.com/singer-io/tap-appsflyer/pull/13)
 
