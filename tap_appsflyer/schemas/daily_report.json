@@ -1,0 +1,51 @@
+{
+    "type": "object",
+    "properties": {
+        "app_id": {
+            "type": ["null","string"]
+        },
+        "date": {
+            "type": ["null","string"],
+            "format": "date"
+        },
+        "agency_pmd__af_prt": {
+            "type": ["null","string"]
+        },
+        "media_source__pid": {
+            "type": ["null","string"]
+        },
+        "campaign__c": {
+            "type": ["null","string"]
+        },
+        "impressions": {
+            "type": ["null","integer"]
+        },
+        "clicks": {
+            "type": ["null","integer"]
+        },
+        "ctr": {
+            "type": ["null","string"]
+        },
+        "installs": {
+            "type": ["null","integer"]
+        },
+        "conversion_rate": {
+            "type": ["null","string"]
+        },
+        "sessions": {
+            "type": ["null","integer"]
+        },
+        "loyal_users": {
+            "type": ["null","integer"]
+        },
+        "loyal_users_installs": {
+            "type": ["null","string"]
+        },
+        "total_cost": {
+            "type": ["null","string"]
+        },
+        "average_ecpi": {
+            "type": ["null","string"]
+        }
+    }
+}

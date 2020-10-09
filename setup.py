@@ -11,10 +11,10 @@ setup(
     classifiers=['Programming Language :: Python :: 3 :: Only'],
     py_modules=['tap_appsflyer'],
     install_requires=[
-        'attrs==16.3.0',
-        'singer-python==1.6.0a2',
-        'requests==2.20.0',
-        'backoff==1.3.2',
+        'attrs',
+        'singer-python',
+        'requests',
+        'backoff',
     ],
     extras_require={
         'dev': [
@@ -29,9 +29,11 @@ setup(
     },
     packages=['tap_appsflyer'],
     package_data={
-        'tap_appsflyer/schemas/raw_data': [
+        'tap_appsflyer/schemas/': [
             'installations.json',
-            'in_app_events.json'
+            'in_app_events.json',
+            'organic_installs.json',
+            'daily_report.json'
         ],
     },
     include_package_data=True,
