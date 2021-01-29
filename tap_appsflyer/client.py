@@ -1,8 +1,9 @@
 import sys
+import csv
 import backoff
 import requests
 import singer
-import singer.stats
+import singer.metrics
 from singer import transform
 from singer import utils
 
@@ -21,6 +22,9 @@ class RequestToCsvAdapter:
     def __next__(self):
         return next(self.request_data_iter).decode("utf-8")
 
+    def giveup(self,exc):
+        return exc.response is not None and 400 <= exc.response.status_code < 500
+
 
 class AppsflyerClient():
     # API rate limits: https://support.appsflyer.com/hc/en-us/articles/207034366-API-Policy
@@ -33,10 +37,10 @@ class AppsflyerClient():
     @backoff.on_exception(backoff.expo,
                       (requests.exceptions.RequestException),
                       max_tries=5,
-                      giveup=giveup,
+                      # giveup=giveup,
                       factor=2)
-    @utils.ratelimit(10, 1)
-    def _request(url, params=None):
+    @utils.ratelimit(2, 60)
+    def _request(self,url, params=None):
 
         params = params or {}
         headers = {}
@@ -47,9 +51,9 @@ class AppsflyerClient():
         req = requests.Request("GET", url, params=params, headers=headers).prepare()
         LOGGER.info("GET %s", req.url)
 
-        with singer.stats.Timer(source=parse_source_from_url(url)) as stats:
-            resp = SESSION.send(req)
-            stats.http_status_code = resp.status_code
+        
+        resp = SESSION.send(req)
+        resp.status_code
 
         if resp.status_code >= 400:
             LOGGER.error("GET %s [%s - %s]", req.url, resp.status_code, resp.content)
@@ -58,8 +62,8 @@ class AppsflyerClient():
         return resp
 
     
-    def _get_url(endpoint):
-        return self.base_url + endpoint.format(app_id=config["app_id"])
+    def _get_url(self,endpoint):
+        return self.base_url + endpoint.format(app_id=self.config["app_id"])
 
     
     def _parse_raw_api_params(self,from_datetime,to_datetime):
@@ -71,16 +75,16 @@ class AppsflyerClient():
         return params
 
 
-    def get_raw_data(self,endpoint,from_datetime,to_datetime):
+    def get_raw_data(self,endpoint,from_datetime,to_datetime,fieldnames):
         # Raw data: https://support.appsflyer.com/hc/en-us/articles/360007530258-Using-Pull-API-raw-data
         
         url = self._get_url(endpoint)
         params = self._parse_raw_api_params(from_datetime,to_datetime)
 
         request_data = self._request(url, params)
-
+        
         csv_data = RequestToCsvAdapter(request_data)
-        reader = csv.DictReader(csv_data, INSTALLATION_FIELDNAMES)
+        reader = csv.DictReader(csv_data, fieldnames)
 
         next(reader) # Skip the heading row
         

@@ -1,6 +1,6 @@
 import singer
-import .transform
-from datetime import datetime
+from .transform import *
+from datetime import datetime, timedelta, timezone
 
 LOGGER = singer.get_logger()
 RAW_BOOKMARK_DATE_FORMAT = '%Y-%m-%dT%H:%MZ'
@@ -11,12 +11,12 @@ class Stream:
         self.client = client
         self.config = config
 
-    def _get_start_time(state,bookmark_format):
+    def _get_start_time(self,state,bookmark_format):
         # if start_date is in the config use it, if not, get 60 days ago
         if "start_date" in self.config:
             start_date = datetime.strptime(self.config["start_date"])
         else:
-            start_date = datetime.datetime.now() - datetime.timedelta(days=60)
+            start_date = datetime.now() - timedelta(days=60)
 
         # get bookmark
         start_time_str = singer.get_bookmark(
@@ -32,7 +32,7 @@ class Stream:
         
         return start_time
     
-    def _get_finish_time(bookmark_format):
+    def _get_finish_time(self,bookmark_format):
         finish_time = None
         if "finish_date" in self.config:
             finish_time = datetime.strptime(self.config["finish_date"],RAW_BOOKMARK_DATE_FORMAT)
@@ -44,7 +44,7 @@ class Stream:
 
 class Installations(Stream):
     tap_stream_id = 'installations'
-    # key_properties = ['id']
+    key_properties = []
     replication_method = 'INCREMENTAL'
     valid_replication_keys = ['event_time']
     replication_key = 'event_time'
@@ -52,17 +52,25 @@ class Installations(Stream):
     def sync(self, state, stream_schema, stream_metadata, transformer):
 
         # Bookmark is in timezone UTC
-        start_time = _get_start_time(state,RAW_BOOKMARK_DATE_FORMAT)
-        finish_time = _get_finish_time(RAW_BOOKMARK_DATE_FORMAT)
+        start_time = self._get_start_time(state,RAW_BOOKMARK_DATE_FORMAT)
+        finish_time = self._get_finish_time(RAW_BOOKMARK_DATE_FORMAT)
         
         endpoint = "/export/{app_id}/installs_report/v5"
 
-        for record in self.client.get_raw_data(endpoint,start_time,finish_time):
-            transformed_record = transformer.transform(xform(record))
+        for record in self.client.get_raw_data(
+            endpoint,
+            start_time,
+            finish_time,     
+            INSTALLATION_FIELDNAMES):
+
+            transformed_record = transformer.transform(
+                xform(record),
+                stream_schema,
+                stream_metadata)
             singer.write_record(self.tap_stream_id,transformed_record,time_extracted=finish_time)
 
         # Convert to bookmark format
-        finish_time_str = datetime.strftime(finish_time,BOOKMARK_DATE_FORMAT)
+        finish_time_str = datetime.strftime(finish_time,RAW_BOOKMARK_DATE_FORMAT)
         state = singer.write_bookmark(state, self.tap_stream_id, self.replication_key, finish_time_str)
         singer.write_state(state)
 

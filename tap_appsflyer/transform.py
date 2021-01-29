@@ -1,5 +1,8 @@
+from datetime import datetime
+
+
 def af_datetime_str_to_datetime(s):
-    return datetime.datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
+    return datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
 
 def xform_datetime_field(record, field_name):
     record[field_name] = af_datetime_str_to_datetime(record[field_name]).isoformat()

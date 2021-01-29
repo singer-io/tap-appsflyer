@@ -13,7 +13,7 @@ def main():
     args = singer.utils.parse_args([])
 
     catalog = args.catalog if args.catalog else discover()
-
+    
     if args.discover:
         write_catalog(catalog)
     else:
