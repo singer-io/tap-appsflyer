@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 LOGGER = singer.get_logger()
 RAW_BOOKMARK_DATE_FORMAT = '%Y-%m-%dT%H:%MZ'
+RAW_REPORTS_API_MAX_WINDOW = 90 #days
 
 
 class Stream:
@@ -11,12 +12,15 @@ class Stream:
         self.client = client
         self.config = config
 
+
+class RawData(Stream):
+
     def _get_start_time(self,state,bookmark_format):
-        # if start_date is in the config use it, if not, get 60 days ago
+        # if start_date is in the config use it, if not, get 90 days ago
         if "start_date" in self.config:
-            start_date = datetime.strptime(self.config["start_date"])
+            start_date = datetime.strptime(self.config["start_date"],RAW_BOOKMARK_DATE_FORMAT)
         else:
-            start_date = datetime.now() - timedelta(days=60)
+            start_date = singer.utils.now().replace(hour=0,minute=0,second=0,microsecond=0) - timedelta(days=RAW_REPORTS_API_MAX_WINDOW)
 
         # get bookmark
         start_time_str = singer.get_bookmark(
@@ -32,58 +36,75 @@ class Stream:
         
         return start_time
     
-    def _get_finish_time(self,bookmark_format):
-        finish_time = None
-        if "finish_date" in self.config:
-            finish_time = datetime.strptime(self.config["finish_date"],RAW_BOOKMARK_DATE_FORMAT)
+    def _get_end_time(self,bookmark_format):
+        end_time = None
+        if "end_date" in self.config:
+            end_time = datetime.strptime(self.config["end_date"],RAW_BOOKMARK_DATE_FORMAT).\
+                replace(tzinfo=timezone.utc)
         else:
-            finish_time = singer.utils.now()
+            end_time = singer.utils.now().replace(second=0,microsecond=0)
         
-        return finish_time
+        return end_time
 
 
-class Installations(Stream):
-    tap_stream_id = 'installations'
-    key_properties = []
-    replication_method = 'INCREMENTAL'
-    valid_replication_keys = ['event_time']
-    replication_key = 'event_time'
-
+    """Defines the sync method for all raw data classes as the raw data endpoints have 
+        the same structure."""
     def sync(self, state, stream_schema, stream_metadata, transformer):
 
         # Bookmark is in timezone UTC
         start_time = self._get_start_time(state,RAW_BOOKMARK_DATE_FORMAT)
-        finish_time = self._get_finish_time(RAW_BOOKMARK_DATE_FORMAT)
-        
-        endpoint = "/export/{app_id}/installs_report/v5"
+        end_time = self._get_end_time(RAW_BOOKMARK_DATE_FORMAT)
 
         for record in self.client.get_raw_data(
-            endpoint,
+            self.report_name,
+            self.report_version,
             start_time,
-            finish_time,     
-            INSTALLATION_FIELDNAMES):
+            end_time,     
+            RAW_INSTALL_N_IN_APP_FIELDNAMES):
 
             transformed_record = transformer.transform(
                 xform(record),
                 stream_schema,
                 stream_metadata)
-            singer.write_record(self.tap_stream_id,transformed_record,time_extracted=finish_time)
+            singer.write_record(self.tap_stream_id,transformed_record,time_extracted=end_time)
 
         # Convert to bookmark format
-        finish_time_str = datetime.strftime(finish_time,RAW_BOOKMARK_DATE_FORMAT)
-        state = singer.write_bookmark(state, self.tap_stream_id, self.replication_key, finish_time_str)
+        end_time_str = datetime.strftime(end_time,RAW_BOOKMARK_DATE_FORMAT)
+        state = singer.write_bookmark(state, self.tap_stream_id, self.replication_key, end_time_str)
         singer.write_state(state)
 
         return state
 
 
+class Installs(RawData):
+
+    tap_stream_id = 'installs'
+    key_properties = ["event_time","event_name","appsflyer_id"]
+    replication_method = 'INCREMENTAL'
+    valid_replication_keys = ['event_time']
+    replication_key = 'event_time'
+    report_name = 'installs_report'
+    report_version = 'v5'
+
+
+class InAppEvents(RawData):
+
+    tap_stream_id = 'in_app_events'
+    key_properties = ["event_time","event_name","appsflyer_id"]
+    replication_method = 'INCREMENTAL'
+    valid_replication_keys = ['event_time']
+    replication_key = 'event_time'
+    report_name = 'in_app_events_report'
+    report_version = 'v5'
+
 
 STREAMS = {
-    'installations': Installations
+    'installs': Installs,
+    'in_app_events': InAppEvents
 }
 
 # This order matters
-INSTALLATION_FIELDNAMES = (
+RAW_INSTALL_N_IN_APP_FIELDNAMES = (
     "attributed_touch_type",
     "attributed_touch_time",
     "install_time",
