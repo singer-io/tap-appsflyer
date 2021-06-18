@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+
+from setuptools import setup, find_packages
+import shutil
+import os
+
+if os.path.isdir('build'):
+    shutil.rmtree('build')
 
 setup(
     name='tap-appsflyer',
@@ -12,7 +18,7 @@ setup(
     py_modules=['tap_appsflyer'],
     install_requires=[
         'attrs==16.3.0',
-        'singer-python==1.6.0a2',
+        #'singer-python==1.6.0a2',
         'requests==2.20.0',
         'backoff==1.3.2',
     ],
@@ -36,3 +42,9 @@ setup(
     },
     include_package_data=True,
 )
+
+
+# clean-up
+if os.path.isdir('build'):
+    shutil.rmtree('build')
+shutil.rmtree('tap_appsflyer.egg-info')

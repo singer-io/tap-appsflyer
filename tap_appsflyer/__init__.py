@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import csv
 import datetime
 import itertools
 import os
@@ -11,11 +10,14 @@ import attr
 import backoff
 import requests
 import singer
-import singer.stats
-from singer import transform
 from singer import utils
 
+from glue_job_libs import general_utils as gu
+from glue_job_libs import s3_util as s3
 
+import json
+
+from tap_appsflyer import credentials
 LOGGER = singer.get_logger()
 SESSION = requests.Session()
 
@@ -35,16 +37,20 @@ ENDPOINTS = {
 }
 
 
+s3_client = s3.AWSS3()
+
+
+
 def af_datetime_str_to_datetime(s):
     return datetime.datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
 
 
-def get_start(key):
-    if key in STATE:
-        return  utils.strptime(STATE[key])
+def get_start(app_id, report_type):
+    if report_type in STATE["bookmarks"].get(app_id):
+        return utils.strptime(STATE["bookmarks"][app_id][report_type])
 
     if "start_date" in CONFIG:
-        return  utils.strptime(CONFIG["start_date"])
+        return utils.strptime(CONFIG["start_date"])
 
     return datetime.datetime.now() - datetime.timedelta(days=30)
 
@@ -67,34 +73,6 @@ def get_url(endpoint, **kwargs):
         return get_base_url() + ENDPOINTS[endpoint].format(**kwargs)
 
 
-def xform_datetime_field(record, field_name):
-    record[field_name] = af_datetime_str_to_datetime(record[field_name]).isoformat()
-
-
-def xform_boolean_field(record, field_name):
-    value = record[field_name]
-    if value is None:
-        return
-
-    if value.lower() == "TRUE".lower():
-        record[field_name] = True
-    else:
-        record[field_name] = False
-
-
-def xform_empty_strings_to_none(record):
-    for key, value in record.items():
-        if value == "":
-            record[key] = None
-
-
-def xform(record, schema):
-    xform_empty_strings_to_none(record)
-    xform_boolean_field(record, "wifi")
-    xform_boolean_field(record, "is_retargeting")
-    return transform.transform(record, schema)
-
-
 @attr.s
 class Stream(object):
     name = attr.ib()
@@ -103,6 +81,12 @@ class Stream(object):
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
+
+def update_state_file(state):
+    with open(get_abs_path(CONFIG["state_file_path"]), 'w') as f:
+        json.dump(state, f)
+    s3_client.upload_file_to_s3(CONFIG["job_config_bucket"],  get_abs_path(CONFIG["state_file_path"]), CONFIG["state_file_path"])
 
 
 def load_schema(entity_name):
@@ -122,6 +106,15 @@ def parse_source_from_url(url):
     return None
 
 
+def get_csv_file_name(from_date, to_date, stream_name):
+    salt = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
+    export_file = 'landing/{}/{}{}_{}_{}_{}.csv'.format(stream_name, gu.get_partition_name_by_date(datetime.datetime.now()), stream_name, from_date, to_date, salt)
+    output_dir = os.path.dirname(export_file)
+    if not os.path.exists(get_abs_path(output_dir)) and output_dir != '':
+        os.makedirs(get_abs_path(output_dir))
+    return export_file
+
+
 @backoff.on_exception(backoff.expo,
                       (requests.exceptions.RequestException),
                       max_tries=5,
@@ -139,9 +132,8 @@ def request(url, params=None):
     req = requests.Request("GET", url, params=params, headers=headers).prepare()
     LOGGER.info("GET %s", req.url)
 
-    with singer.stats.Timer(source=parse_source_from_url(url)) as stats:
+    with singer.metrics.http_request_timer(endpoint=parse_source_from_url(url)) as stats:
         resp = SESSION.send(req)
-        stats.http_status_code = resp.status_code
 
     if resp.status_code >= 400:
         LOGGER.error("GET %s [%s - %s]", req.url, resp.status_code, resp.content)
@@ -162,231 +154,49 @@ class RequestToCsvAdapter:
 
 
 def sync_installs():
+    stop_time = datetime.datetime.now()
+    from_datetime = get_start(CONFIG['app_id'], "installs")
+    to_datetime = get_stop(from_datetime, stop_time, 10)
 
-    schema = load_schema("raw_data/installations")
-    singer.write_schema("installs", schema, [
-        "event_time",
-        "event_name",
-        "appsflyer_id"
-    ])
+    while from_datetime < stop_time:
 
-    # This order matters
-    fieldnames = (
-        "attributed_touch_type",
-        "attributed_touch_time",
-        "install_time",
-        "event_time",
-        "event_name",
-        "event_value",
-        "event_revenue",
-        "event_revenue_currency",
-        "event_revenue_usd",
-        "event_source",
-        "is_receipt_validated",
-        "af_prt",
-        "media_source",
-        "af_channel",
-        "af_keywords",
-        "campaign",
-        "af_c_id",
-        "af_adset",
-        "af_adset_id",
-        "af_ad",
-        "af_ad_id",
-        "af_ad_type",
-        "af_siteid",
-        "af_sub_siteid",
-        "af_sub1",
-        "af_sub2",
-        "af_sub3",
-        "af_sub4",
-        "af_sub5",
-        "af_cost_model",
-        "af_cost_value",
-        "af_cost_currency",
-        "contributor1_af_prt",
-        "contributor1_media_source",
-        "contributor1_campaign",
-        "contributor1_touch_type",
-        "contributor1_touch_time",
-        "contributor2_af_prt",
-        "contributor2_media_source",
-        "contributor2_campaign",
-        "contributor2_touch_type",
-        "contributor2_touch_time",
-        "contributor3_af_prt",
-        "contributor3_media_source",
-        "contributor3_campaign",
-        "contributor3_touch_type",
-        "contributor3_touch_time",
-        "region",
-        "country_code",
-        "state",
-        "city",
-        "postal_code",
-        "dma",
-        "ip",
-        "wifi",
-        "operator",
-        "carrier",
-        "language",
-        "appsflyer_id",
-        "advertising_id",
-        "idfa",
-        "android_id",
-        "customer_user_id",
-        "imei",
-        "idfv",
-        "platform",
-        "device_type",
-        "os_version",
-        "app_version",
-        "sdk_version",
-        "app_id",
-        "app_name",
-        "bundle_id",
-        "is_retargeting",
-        "retargeting_conversion_type",
-        "af_attribution_lookback",
-        "af_reengagement_window",
-        "is_primary_attribution",
-        "user_agent",
-        "http_referrer",
-        "original_url",
-    )
+        if to_datetime < from_datetime:
+            LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
+            return
 
-    from_datetime = get_start("installs")
-    to_datetime = get_stop(from_datetime, datetime.datetime.now())
+        params = dict()
+        params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
+        params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
+        params["api_token"] = CONFIG["api_token"]
 
-    if to_datetime < from_datetime:
-        LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
-        return
+        url = get_url("installs", app_id=CONFIG["app_id"])
+        request_data = request(url, params)
 
-    params = dict()
-    params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
-    params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
-    params["api_token"] = CONFIG["api_token"]
+        output_csv_file = get_csv_file_name(
+            from_datetime.strftime("%Y%m%d%H%M"),
+            to_datetime.strftime("%Y%m%d%H%M"),
+            "installs"
+        )
+        with open(get_abs_path(output_csv_file), 'wb') as f:
+            f.write(request_data.content)
 
-    url = get_url("installs", app_id=CONFIG["app_id"])
-    request_data = request(url, params)
+        s3_client.upload_file_to_s3(CONFIG["destination_bucket"], get_abs_path(output_csv_file), output_csv_file)
 
-    csv_data = RequestToCsvAdapter(request_data)
-    reader = csv.DictReader(csv_data, fieldnames)
+        bookmark = datetime.datetime.strftime(to_datetime, utils.DATETIME_PARSE)
 
-    next(reader) # Skip the heading row
+        # Write out state
+        utils.update_state(STATE['bookmarks'][CONFIG['app_id']], "installs", bookmark)
+        update_state_file(STATE)
 
-    bookmark = from_datetime
-    for i, row in enumerate(reader):
-        record = xform(row, schema)
-        singer.write_record("installs", record)
-        # AppsFlyer returns records in order of most recent first.
-        try:
-            if utils.strptime(record["attributed_touch_time"]) > bookmark:
-                bookmark = utils.strptime(record["attributed_touch_time"])
-        except:
-            LOGGER.error("failed to get attributed_touch_time")
-
-    # Write out state
-    utils.update_state(STATE, "installs", bookmark)
-    singer.write_state(STATE)
+        # Move the timings forward
+        from_datetime = to_datetime
+        to_datetime = get_stop(from_datetime, stop_time, 10)
 
 
 def sync_in_app_events():
 
-    schema = load_schema("raw_data/in_app_events")
-    singer.write_schema("in_app_events", schema, [
-        "event_time",
-        "event_name",
-        "appsflyer_id"
-    ])
-
-    # This order matters
-    fieldnames = (
-        "attributed_touch_type",
-        "attributed_touch_time",
-        "install_time",
-        "event_time",
-        "event_name",
-        "event_value",
-        "event_revenue",
-        "event_revenue_currency",
-        "event_revenue_usd",
-        "event_source",
-        "is_receipt_validated",
-        "af_prt",
-        "media_source",
-        "af_channel",
-        "af_keywords",
-        "campaign",
-        "af_c_id",
-        "af_adset",
-        "af_adset_id",
-        "af_ad",
-        "af_ad_id",
-        "af_ad_type",
-        "af_siteid",
-        "af_sub_siteid",
-        "af_sub1",
-        "af_sub2",
-        "af_sub3",
-        "af_sub4",
-        "af_sub5",
-        "af_cost_model",
-        "af_cost_value",
-        "af_cost_currency",
-        "contributor1_af_prt",
-        "contributor1_media_source",
-        "contributor1_campaign",
-        "contributor1_touch_type",
-        "contributor1_touch_time",
-        "contributor2_af_prt",
-        "contributor2_media_source",
-        "contributor2_campaign",
-        "contributor2_touch_type",
-        "contributor2_touch_time",
-        "contributor3_af_prt",
-        "contributor3_media_source",
-        "contributor3_campaign",
-        "contributor3_touch_type",
-        "contributor3_touch_time",
-        "region",
-        "country_code",
-        "state",
-        "city",
-        "postal_code",
-        "dma",
-        "ip",
-        "wifi",
-        "operator",
-        "carrier",
-        "language",
-        "appsflyer_id",
-        "advertising_id",
-        "idfa",
-        "android_id",
-        "customer_user_id",
-        "imei",
-        "idfv",
-        "platform",
-        "device_type",
-        "os_version",
-        "app_version",
-        "sdk_version",
-        "app_id",
-        "app_name",
-        "bundle_id",
-        "is_retargeting",
-        "retargeting_conversion_type",
-        "af_attribution_lookback",
-        "af_reengagement_window",
-        "is_primary_attribution",
-        "user_agent",
-        "http_referrer",
-        "original_url",
-    )
-
     stop_time = datetime.datetime.now()
-    from_datetime = get_start("in_app_events")
+    from_datetime = get_start(CONFIG['app_id'], "in_app_events")
     to_datetime = get_stop(from_datetime, stop_time, 10)
 
     while from_datetime < stop_time:
@@ -399,22 +209,21 @@ def sync_in_app_events():
         url = get_url("in_app_events", app_id=CONFIG["app_id"])
         request_data = request(url, params)
 
-        csv_data = RequestToCsvAdapter(request_data)
-        reader = csv.DictReader(csv_data, fieldnames)
+        output_csv_file = get_csv_file_name(
+            from_datetime.strftime("%Y%m%d%H%M"),
+            to_datetime.strftime("%Y%m%d%H%M"),
+            "in_app_events"
+        )
 
-        next(reader) # Skip the heading row
+        with open(get_abs_path(output_csv_file), 'wb') as f:
+            f.write(request_data.content)
 
-        bookmark = from_datetime
-        for i, row in enumerate(reader):
-            record = xform(row, schema)
-            singer.write_record("in_app_events", record)
-            # AppsFlyer returns records in order of most recent first.
-            if utils.strptime(record["event_time"]) > bookmark:
-                bookmark = utils.strptime(record["event_time"])
+        s3_client.upload_file_to_s3(CONFIG["destination_bucket"], get_abs_path(output_csv_file), output_csv_file)
 
         # Write out state
-        utils.update_state(STATE, "in_app_events", bookmark)
-        singer.write_state(STATE)
+        bookmark = datetime.datetime.strftime(to_datetime, utils.DATETIME_PARSE)
+        utils.update_state(STATE['bookmarks'][CONFIG['app_id']], "in_app_events", bookmark)
+        update_state_file(STATE)
 
         # Move the timings forward
         from_datetime = to_datetime
@@ -443,27 +252,38 @@ def do_sync():
     LOGGER.info('Starting sync. Will sync these streams: %s', [stream.name for stream in streams])
     for stream in streams:
         LOGGER.info('Syncing %s', stream.name)
-        STATE["this_stream"] = stream.name
         stream.sync() # pylint: disable=not-callable
-    STATE["this_stream"] = None
     singer.write_state(STATE)
     LOGGER.info("Sync completed")
 
 
-def main():
-    args = utils.parse_args(
-        [
-            "app_id",
-            "api_token",
-        ])
+def main(bucket, config_file, state_file):
 
-    CONFIG.update(args.config)
+    all_apps = [
+        'com.transfergo.android',
+        'id1110641576'
+    ]
 
-    if args.state:
-        STATE.update(args.state)
+    conn_info = credentials.Config()
 
-    do_sync()
+    local_file = get_abs_path(state_file)
+    gu.create_dir_if_not_exists(local_file)
+    s3_client.download_file(bucket, state_file, local_file)
+    STATE.update(utils.load_json(local_file))
+
+    job_config = s3_client.get_s3_file(bucket=bucket, file=config_file)
+    job_config = json.loads(job_config)
+
+    CONFIG["api_token"] = conn_info.access_token
+    CONFIG["destination_bucket"] = job_config['destination_bucket']
+    CONFIG["state_file_path"] = state_file
+    CONFIG["job_config_bucket"] = bucket
+
+
+    for app in all_apps:
+        CONFIG["app_id"] = app
+        do_sync()
 
 
 if __name__ == '__main__':
-    main()
+    main(bucket='aws-glue-scripts-082806765249-eu-west-1', config_file='appsflyer/config/config.json', state_file='appsflyer/config/state.json')
