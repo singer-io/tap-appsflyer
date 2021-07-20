@@ -97,3 +97,6 @@ env.sh
 config.json
 .autoenv.zsh
 *~
+
+*config.json
+*catalog.json
