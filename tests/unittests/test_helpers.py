@@ -1,7 +1,7 @@
 import datetime
 from unittest.mock import patch
 
-from tap_appsflyer import get_restricted_start_date
+from tap_appsflyer import clean_config, get_restricted_start_date
 
 MOCKED_DATE = datetime.datetime(2021, 7, 1, 1, 1, 1, 369251)
 
@@ -22,3 +22,17 @@ def test_get_restricted_start_date():
         date = get_restricted_start_date(test_case['case'])
 
         assert date == test_case['expected']
+
+
+def test_clean_config():
+    test_cases = [
+        {'case': {'app_id': ' 123456789 '}, 'expected': '123456789'},
+        {'case': {'app_id': '7898901  '}, 'expected': '7898901'},
+        {'case': {'app_id': '  90234-0823jsjfsfsuf'}, 'expected': '90234-0823jsjfsfsuf'},
+        {'case': {'app_id': 'fajslfaw084578fsdfj'}, 'expected': 'fajslfaw084578fsdfj'},
+        {'case': {'app_id': ' abc def ghi  '}, 'expected': 'abc def ghi'},
+    ]
+
+    for test_case in test_cases:
+        config = clean_config(test_case['case'])
+        assert config['app_id'] == test_case['expected']

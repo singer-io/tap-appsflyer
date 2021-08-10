@@ -36,6 +36,16 @@ ENDPOINTS = {
 }
 
 
+def clean_config(config: dict) -> dict:
+    """Strips whitespace from any values in the config."""
+    for key in config.keys():
+        value = config[key]
+        if isinstance(value, str):
+            config[key] = value.strip()
+
+    return config
+
+
 def af_datetime_str_to_datetime(s):
     return datetime.datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
 
@@ -595,7 +605,8 @@ def main():
             "api_token"
         ])
 
-    CONFIG.update(args.config)
+    config = clean_config(args.config)
+    CONFIG.update(config)
 
     if args.state:
         STATE.update(args.state)
