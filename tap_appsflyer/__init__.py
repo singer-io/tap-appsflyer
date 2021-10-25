@@ -641,21 +641,17 @@ def sync_in_app_events():
 
 STREAMS = [
     Stream("installs", sync_installs),
-    Stream("in_app_events", sync_in_app_events)
+    Stream("in_app_events", sync_in_app_events),
+    Stream("partners_by_date", sync_partners_by_date)
 ]
 
 
 def get_streams_to_sync(streams, state):
     target_stream = state.get("this_stream")
     result = streams
-
     if "organic_installs" in CONFIG:
         if CONFIG["organic_installs"]:
             result.append(Stream("organic_installs", sync_organic_installs))
-    if "partners_by_date" in CONFIG:
-        if CONFIG["partners_by_date"]:
-            result.append(Stream("partners_by_date", sync_partners_by_date))
-
     if target_stream:
         result = list(itertools.dropwhile(lambda x: x.name != target_stream, streams))
     if not result:
