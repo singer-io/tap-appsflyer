@@ -40,7 +40,7 @@
     "ctr": {
       "type": [
         "null",
-        "float"
+        "number"
       ]
     },
     "installs": {
@@ -52,7 +52,7 @@
     "conversion_rate": {
       "type": [
         "null",
-        "float"
+        "number"
       ]
     },
     "sessions": {
@@ -70,13 +70,13 @@
     "loyal_users_installs": {
       "type": [
         "null",
-        "float"
+        "number"
       ]
     },
     "total_revenue": {
       "type": [
         "null",
-        "float"
+        "number"
       ]
     },
     "total_cost": {
