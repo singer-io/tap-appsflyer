@@ -33,7 +33,9 @@ STATE = {}
 
 ENDPOINTS = {
     "installs": "/export/{app_id}/installs_report/v5",
-    "in_app_events": "/export/{app_id}/in_app_events_report/v5"
+    "organic_installs": "/export/{app_id}/organic_installs_report/v5",
+    "in_app_events": "/export/{app_id}/in_app_events_report/v5",
+    "organic_in_app_events": "/export/{app_id}/organic_in_app_events_report/v5"
 }
 
 
@@ -44,6 +46,8 @@ s3_client = s3.AWSS3()
 def af_datetime_str_to_datetime(s):
     return datetime.datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
 
+def date_trunc(dt):
+    return dt.replace(hour=0, minute=0, second=0, microsecond=0)
 
 def get_start(app_id, report_type):
     if report_type in STATE["bookmarks"].get(app_id):
@@ -153,10 +157,10 @@ class RequestToCsvAdapter:
         return next(self.request_data_iter).decode("utf-8")
 
 
-def sync_installs():
-    stop_time = datetime.datetime.now()
-    from_datetime = get_start(CONFIG['app_id'], "installs")
-    to_datetime = get_stop(from_datetime, stop_time, 10)
+def sync_installs(stream):
+    stop_time = date_trunc(datetime.datetime.now())
+    from_datetime = get_start(CONFIG['app_id'], stream)
+    to_datetime = date_trunc(get_stop(from_datetime, stop_time, 10))
 
     while from_datetime < stop_time:
 
@@ -169,13 +173,13 @@ def sync_installs():
         params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
         params["api_token"] = CONFIG["api_token"]
 
-        url = get_url("installs", app_id=CONFIG["app_id"])
+        url = get_url(stream, app_id=CONFIG["app_id"])
         request_data = request(url, params)
 
         output_csv_file = get_csv_file_name(
             from_datetime.strftime("%Y%m%d%H%M"),
             to_datetime.strftime("%Y%m%d%H%M"),
-            "installs"
+            stream
         )
         with open(get_abs_path(output_csv_file), 'wb') as f:
             f.write(request_data.content)
@@ -185,7 +189,7 @@ def sync_installs():
         bookmark = datetime.datetime.strftime(to_datetime, utils.DATETIME_PARSE)
 
         # Write out state
-        utils.update_state(STATE['bookmarks'][CONFIG['app_id']], "installs", bookmark)
+        utils.update_state(STATE['bookmarks'][CONFIG['app_id']], stream, bookmark)
         update_state_file(STATE)
 
         # Move the timings forward
@@ -193,11 +197,11 @@ def sync_installs():
         to_datetime = get_stop(from_datetime, stop_time, 10)
 
 
-def sync_in_app_events():
+def sync_in_app_events(stream):
 
-    stop_time = datetime.datetime.now()
-    from_datetime = get_start(CONFIG['app_id'], "in_app_events")
-    to_datetime = get_stop(from_datetime, stop_time, 10)
+    stop_time = date_trunc(datetime.datetime.now())
+    from_datetime = get_start(CONFIG['app_id'], stream)
+    to_datetime = date_trunc(get_stop(from_datetime, stop_time, 10))
 
     while from_datetime < stop_time:
         LOGGER.info("Syncing data from %s to %s", from_datetime, to_datetime)
@@ -206,13 +210,13 @@ def sync_in_app_events():
         params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
         params["api_token"] = CONFIG["api_token"]
 
-        url = get_url("in_app_events", app_id=CONFIG["app_id"])
+        url = get_url(stream, app_id=CONFIG["app_id"])
         request_data = request(url, params)
 
         output_csv_file = get_csv_file_name(
             from_datetime.strftime("%Y%m%d%H%M"),
             to_datetime.strftime("%Y%m%d%H%M"),
-            "in_app_events"
+            stream
         )
 
         with open(get_abs_path(output_csv_file), 'wb') as f:
@@ -222,7 +226,7 @@ def sync_in_app_events():
 
         # Write out state
         bookmark = datetime.datetime.strftime(to_datetime, utils.DATETIME_PARSE)
-        utils.update_state(STATE['bookmarks'][CONFIG['app_id']], "in_app_events", bookmark)
+        utils.update_state(STATE['bookmarks'][CONFIG['app_id']], stream, bookmark)
         update_state_file(STATE)
 
         # Move the timings forward
@@ -232,7 +236,9 @@ def sync_in_app_events():
 
 STREAMS = [
     Stream("installs", sync_installs),
-    Stream("in_app_events", sync_in_app_events)
+    Stream("in_app_events", sync_in_app_events),
+    Stream("organic_installs", sync_installs),
+    Stream("organic_in_app_events", sync_in_app_events)
 ]
 
 
@@ -247,12 +253,13 @@ def get_streams_to_sync(streams, state):
 
 
 def do_sync():
-    LOGGER.info("do_sync()")
+    LOGGER.info("Starting sync...")
+    LOGGER.info("STATE:{}".format(STATE))
     streams = get_streams_to_sync(STREAMS, STATE)
     LOGGER.info('Starting sync. Will sync these streams: %s', [stream.name for stream in streams])
     for stream in streams:
         LOGGER.info('Syncing %s', stream.name)
-        stream.sync() # pylint: disable=not-callable
+        stream.sync(stream.name) # pylint: disable=not-callable
     singer.write_state(STATE)
     LOGGER.info("Sync completed")
 
