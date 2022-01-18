@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.0.12
+## 0.0.13
   * Add organic installations[#20](https://github.com/singer-io/tap-appsflyer/pull/20)
   * Add Helper Function to remove whitespaces from config and respective unittest[#29](https://github.com/singer-io/tap-appsflyer/pull/29)
   * Added data restrictions of no more than 90 days from Current date[#30](https://github.com/singer-io/tap-appsflyer/pull/30)
