@@ -1,0 +1,107 @@
+{
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": [
+        "string"
+      ],
+      "format": "date"
+    },
+    "agency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "media_source": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "impressions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "clicks": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "ctr": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "installs": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "conversion_rate": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "sessions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "loyal_users": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "loyal_users_installs": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "total_revenue": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "total_cost": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "roi": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "arpu": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "average_ecpi": {
+      "type": [
+        "null",
+        "number"
+      ]
+    }
+  }
+}

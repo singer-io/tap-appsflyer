@@ -32,7 +32,8 @@ STATE = {}
 ENDPOINTS = {
     "installs": "/export/{app_id}/installs_report/v5",
     "organic_installs": "/export/{app_id}/organic_installs_report/v5",
-    "in_app_events": "/export/{app_id}/in_app_events_report/v5"
+    "in_app_events": "/export/{app_id}/in_app_events_report/v5",
+    "partners_by_date": "/export/{app_id}/partners_by_date_report/v5"
 }
 
 
@@ -48,6 +49,9 @@ def clean_config(config: dict) -> dict:
 
 def af_datetime_str_to_datetime(s):
     return datetime.datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
+
+def af_date_str_to_date(s):
+    return datetime.datetime.strptime(s.strip(), "%Y-%m-%d")
 
 
 def get_restricted_start_date(date: str) -> datetime.datetime:
@@ -103,7 +107,7 @@ def xform_boolean_field(record, field_name):
 
 def xform_empty_strings_to_none(record):
     for key, value in record.items():
-        if value == "":
+        if value == "" or value == "N/A":
             record[key] = None
 
 
@@ -111,6 +115,10 @@ def xform(record, schema):
     xform_empty_strings_to_none(record)
     xform_boolean_field(record, "wifi")
     xform_boolean_field(record, "is_retargeting")
+    return transform.transform(record, schema)
+
+def xform_by_date(record, schema):
+    xform_empty_strings_to_none(record)
     return transform.transform(record, schema)
 
 
@@ -178,6 +186,71 @@ class RequestToCsvAdapter:
 
     def __next__(self):
         return next(self.request_data_iter).decode("utf-8")
+
+
+def sync_partners_by_date():
+    
+    schema = load_schema("raw_data/partners_by_date")
+    singer.write_schema("partners_by_date", schema, [
+        "date",
+        "media_source",
+        "campaign"
+    ])
+    
+    fieldnames = (
+        "date",
+        "agency",
+        "media_source",
+        "campaign",
+        "impressions",
+        "clicks",
+        "ctr",
+        "installs",
+        "conversion_rate",
+        "sessions",
+        "loyal_users",
+        "loyal_users_installs",
+        "total_revenue",
+        "total_cost",
+        "roi",
+        "arpu",
+        "average_ecpi",
+    )
+
+    from_datetime = get_start("partners_by_date")
+    to_datetime = get_stop(from_datetime, datetime.datetime.now())
+
+    if to_datetime < from_datetime:
+        LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
+        return
+
+    params = dict()
+    params["from"] = from_datetime.strftime("%Y-%m-%d")
+    params["to"] = to_datetime.strftime("%Y-%m-%d")
+    params["api_token"] = CONFIG["api_token"]
+
+    url = get_url("partners_by_date", app_id=CONFIG["app_id"])
+    request_data = request(url, params)
+
+    csv_data = RequestToCsvAdapter(request_data)
+    reader = csv.DictReader(csv_data, fieldnames)
+
+    next(reader) # Skip the heading row
+
+    bookmark = from_datetime
+    for i, row in enumerate(reader):
+        record = xform_by_date(row, schema)
+        singer.write_record("partners_by_date", record)
+        # AppsFlyer returns records in order of most recent first.
+        try:
+            if (current := datetime.datetime.strptime(record["date"], "%Y-%m-%d")) > bookmark:
+                bookmark = current
+        except:
+            LOGGER.error("failed to get date")
+
+    # Write out state
+    utils.update_state(STATE, "partners_by_date", bookmark)
+    singer.write_state(STATE)
 
 
 def sync_installs():
@@ -568,7 +641,8 @@ def sync_in_app_events():
 
 STREAMS = [
     Stream("installs", sync_installs),
-    Stream("in_app_events", sync_in_app_events)
+    Stream("in_app_events", sync_in_app_events),
+    Stream("partners_by_date", sync_partners_by_date)
 ]
 
 
