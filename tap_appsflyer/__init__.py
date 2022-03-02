@@ -33,11 +33,21 @@ STATE = {}
 
 ENDPOINTS = {
     "installs": "/export/{app_id}/installs_report/v5",
+    "installs_retargeting": "/export/{app_id}/installs_report/v5",
     "organic_installs": "/export/{app_id}/organic_installs_report/v5",
     "in_app_events": "/export/{app_id}/in_app_events_report/v5",
+    "in_app_events_retargeting": "/export/{app_id}/in_app_events_report/v5",
     "organic_in_app_events": "/export/{app_id}/organic_in_app_events_report/v5"
 }
 
+EXTRA_ENDPOINT_PARAMETERS = {
+    "installs": False,
+    "installs_retargeting": True,
+    "organic_installs": False,
+    "in_app_events": False,
+    "in_app_events_retargeting": True,
+    "organic_in_app_events": False
+}
 
 s3_client = s3.AWSS3()
 
@@ -75,6 +85,12 @@ def get_url(endpoint, **kwargs):
         raise ValueError("Invalid endpoint {}".format(endpoint))
     else:
         return get_base_url() + ENDPOINTS[endpoint].format(**kwargs)
+
+def get_retargeting_parameter(endpoint):
+    if endpoint not in EXTRA_ENDPOINT_PARAMETERS:
+        raise ValueError("Invalid endpoint {}".format(endpoint))
+    else:
+        return EXTRA_ENDPOINT_PARAMETERS[endpoint]
 
 
 @attr.s
@@ -172,6 +188,7 @@ def sync_installs(stream):
         params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
         params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
         params["api_token"] = CONFIG["api_token"]
+        params["reattr"] = get_retargeting_parameter(endpoint=stream)
 
         url = get_url(stream, app_id=CONFIG["app_id"])
         request_data = request(url, params)
@@ -209,6 +226,7 @@ def sync_in_app_events(stream):
         params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
         params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
         params["api_token"] = CONFIG["api_token"]
+        params["reattr"] = get_retargeting_parameter(endpoint=stream)
 
         url = get_url(stream, app_id=CONFIG["app_id"])
         request_data = request(url, params)
@@ -236,11 +254,17 @@ def sync_in_app_events(stream):
 
 STREAMS = [
     Stream("installs", sync_installs),
+    Stream("installs_retargeting", sync_installs),
     Stream("in_app_events", sync_in_app_events),
+    Stream("in_app_events_retargeting", sync_in_app_events),
     Stream("organic_installs", sync_installs),
     Stream("organic_in_app_events", sync_in_app_events)
 ]
 
+# STREAMS = [
+#     Stream("installs_retargeting", sync_installs),
+#     Stream("in_app_events_retargeting", sync_in_app_events)
+# ]
 
 def get_streams_to_sync(streams, state):
     target_stream = state.get("this_stream")
