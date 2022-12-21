@@ -30,9 +30,10 @@ STATE = {}
 
 
 ENDPOINTS = {
-    "installs": "/export/{app_id}/installs_report/v5",
-    "organic_installs": "/export/{app_id}/organic_installs_report/v5",
-    "in_app_events": "/export/{app_id}/in_app_events_report/v5"
+    "installs": "/api/raw-data/export/app/{app_id}/installs_report/v5",
+    "organic_installs": "/api/raw-data/export/app/{app_id}/organic_installs_report/v5",
+    "in_app_events": "/api/raw-data/export/app/{app_id}/in_app_events_report/v5",
+    "skan_aggregated_perf": "/api/skadnetworks/v2/data/app/{app_id}"
 }
 
 
@@ -76,7 +77,7 @@ def get_base_url():
     if "base_url" in CONFIG:
         return CONFIG["base_url"]
     else:
-        return "https://hq.appsflyer.com"
+        return "https://hq1.appsflyer.com"
 
 
 def get_url(endpoint, **kwargs):
@@ -147,13 +148,14 @@ def parse_source_from_url(url):
                       giveup=giveup,
                       factor=2)
 @utils.ratelimit(10, 1)
-def request(url, params=None):
+def request(url, api_token, params=None):
 
     params = params or {}
     headers = {}
 
     if "user_agent" in CONFIG:
         headers["User-Agent"] = CONFIG["user_agent"]
+    headers["Authorization"] = "Bearer " + api_token
 
     req = requests.Request("GET", url, params=params, headers=headers).prepare()
     LOGGER.info("GET %s", req.url)
@@ -284,10 +286,9 @@ def sync_installs():
     params = dict()
     params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
     params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
-    params["api_token"] = CONFIG["api_token"]
 
     url = get_url("installs", app_id=CONFIG["app_id"])
-    request_data = request(url, params)
+    request_data = request(url, CONFIG["api_token"], params)
 
     csv_data = RequestToCsvAdapter(request_data)
     reader = csv.DictReader(csv_data, fieldnames)
@@ -413,10 +414,9 @@ def sync_organic_installs():
     params = dict()
     params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
     params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
-    params["api_token"] = CONFIG["api_token"]
 
     url = get_url("organic_installs", app_id=CONFIG["app_id"])
-    request_data = request(url, params)
+    request_data = request(url, CONFIG["api_token"], params)
 
     csv_data = RequestToCsvAdapter(request_data)
     reader = csv.DictReader(csv_data, fieldnames)
@@ -539,10 +539,9 @@ def sync_in_app_events():
         params = dict()
         params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
         params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
-        params["api_token"] = CONFIG["api_token"]
 
         url = get_url("in_app_events", app_id=CONFIG["app_id"])
-        request_data = request(url, params)
+        request_data = request(url, CONFIG["api_token"], params)
 
         csv_data = RequestToCsvAdapter(request_data)
         reader = csv.DictReader(csv_data, fieldnames)
@@ -566,6 +565,85 @@ def sync_in_app_events():
         to_datetime = get_stop(from_datetime, stop_time, 10)
 
 
+def sync_skan_aggregated_perf():
+
+    schema = load_schema("raw_data/skan_aggregated_perf")
+    singer.write_schema("skan_aggregated_perf", schema, [
+        "date"
+    ])
+
+    # This order matters
+    fieldnames = (
+        "date",
+        "media_source",
+        "campaign",
+        "campaign_id",
+        "site_id",
+        "adset",
+        "adset_id",
+        "ad",
+        "ad_id",
+        "country",
+        "af_attribution_flag",
+        "impressions",
+        "clicks",
+        "ctr",
+        "installs",
+        "click_through_installs",
+        "view_through_installs",
+        "null_conversion_value_rate",
+        "conversion_rate",
+        "converted_users",
+        "converted_users_installs",
+        "total_revenue",
+        "total_cost",
+        "roi",
+        "arpu",
+        "average_ecpi",
+        "initial_loading_unique_users",
+        "initial_loading_event_counter",
+        "register_step_attempt_unique_users",
+        "register_step_attempt_event_counter",
+        "register_step_getting_started_unique_users",
+        "register_step_getting_started_event_counter",
+        "register_step_mobile_number_unique_users",
+        "register_step_mobile_number_event_counter",
+        "register_step_success_unique_users",
+        "register_step_success_event_counter",
+        "register_step_verification_code_unique_users",
+        "register_step_verification_code_event_counter"
+    )
+
+    from_datetime = get_start("skan_aggregated_perf")
+    to_datetime = get_stop(from_datetime, datetime.datetime.now())
+
+    if to_datetime < from_datetime:
+        LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
+        return
+
+    params = dict()
+    params["start_date"] = from_datetime.strftime("%Y-%m-%d")
+    params["end_date"] = to_datetime.strftime("%Y-%m-%d")
+
+    url = get_url("skan_aggregated_perf", app_id=CONFIG["app_id"])
+    request_data = request(url, CONFIG["api_token"], params)
+
+    csv_data = RequestToCsvAdapter(request_data)
+    reader = csv.DictReader(csv_data, fieldnames)
+
+    next(reader) # Skip the heading row
+
+    bookmark = from_datetime
+    for i, row in enumerate(reader):
+        xform_empty_strings_to_none(row)
+        record = transform.transform(row, schema)
+        singer.write_record("skan_aggregated_perf", record)
+
+    # Write out state
+    utils.update_state(STATE, "skan_aggregated_perf", bookmark)
+    singer.write_state(STATE)
+
+
 STREAMS = [
     Stream("installs", sync_installs),
     Stream("in_app_events", sync_in_app_events)
@@ -578,6 +656,9 @@ def get_streams_to_sync(streams, state):
     if "organic_installs" in CONFIG:
         if CONFIG["organic_installs"]:
             result.append(Stream("organic_installs", sync_organic_installs))
+    if "skan_aggregated_perf" in CONFIG:
+        if CONFIG["skan_aggregated_perf"]:
+            result.append(Stream("skan_aggregated_perf", sync_skan_aggregated_perf))
     if target_stream:
         result = list(itertools.dropwhile(lambda x: x.name != target_stream, streams))
     if not result:

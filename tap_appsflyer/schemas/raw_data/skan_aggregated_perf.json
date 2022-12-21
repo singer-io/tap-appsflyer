@@ -1,0 +1,234 @@
+{
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "media_source": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "campaign_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "site_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "adset": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "adset_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ad": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ad_id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "country": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "af_attribution_flag": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "impressions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "clicks": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "ctr": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "installs": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "click_through_installs": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "view_through_installs": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "null_conversion_value_rate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "conversion_rate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "converted_users": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "converted_users_installs": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "total_revenue": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "total_cost": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "roi": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "arpu": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "average_ecpi": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "initial_loading_unique_users": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "initial_loading_event_counter": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_attempt_unique_users": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_attempt_event_counter": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_getting_started_unique_users": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_getting_started_event_counter": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_mobile_number_unique_users": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_mobile_number_event_counter": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_success_unique_users": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_success_event_counter": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_verification_code_unique_users": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "register_step_verification_code_event_counter": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    }
+  }
+}
