@@ -97,6 +97,7 @@ env.sh
 config.json
 .autoenv.zsh
 *~
+.idea
 
 *config.json
 *catalog.json

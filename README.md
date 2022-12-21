@@ -5,6 +5,7 @@ data following the [Singer spec](https://github.com/singer-io/getting-started/bl
 
 This tap:
 - Pulls raw data from AppFlyer's [Raw Data Reports V5 API](https://support.appsflyer.com/hc/en-us/articles/208387843-Raw-Data-Reports-V5-)
+- Pulls aggregate data from AppFlyer's [SKAN Aggregated Report API](https://support.appsflyer.com/hc/en-us/articles/360014104157)
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
 
