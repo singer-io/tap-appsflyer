@@ -152,7 +152,7 @@ def request(url, api_token, params=None):
     params = params or {}
     headers = {}
 
-    if api_token.len() > 36:
+    if len(api_token) > 36:
         headers["Authorization"] = "Bearer " + api_token
     else:
         params["api_token"] = api_token
