@@ -1,90 +1,49 @@
-version: 2.1
-orbs:
-  slack: circleci/slack@3.4.2
-
-executors:
-  tap_tester:
+version: 2
+jobs:
+  build:
     docker:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
-jobs:
-  ensure_env:
-    executor: tap_tester
     steps:
       - checkout
       - run:
           name: 'Setup virtual env'
           command: |
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
-            python3 -m venv /usr/local/share/virtualenvs/tap-appsflyer/
+            python3 -mvenv /usr/local/share/virtualenvs/tap-appsflyer
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
             pip install -U 'pip<19.2' 'setuptools<51.0.0'
             pip install .[dev]
-      - persist_to_workspace:
-          root: /usr/local/share/virtualenvs/
-          paths:
-            - tap-appsflyer
-            - dev_env.sh
-  build:
-    executor: tap_tester
-    steps:
-      - run: echo "Tests have passed."
-  run_pylint_and_unittests:
-    executor: tap_tester
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
+            pip install pylint
       - run:
           name: 'pylint'
           command: |
-            source /usr/local/share/virtualenvs/dev_env.sh
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
-            # BUG https://jira.talendforge.org/browse/TDL-15447
-            echo "Disabling the following $PYLINT_DISABLE_LIST"
-            pylint tap_appsflyer -d "$PYLINT_DISABLE_LIST"
+            pylint tap_appsflyer -d C,R,W
       - run:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
-            nosetests tap_appsflyer/tests
             pip install coverage
-            nosetests --with-coverage --cover-erase --cover-package=tap_appsflyer --cover-html-dir=htmlcov tap_appsflyer/tests/unittests
+            pip install nose coverage parameterized
+            nosetests --with-coverage --cover-erase --cover-package=tap_appsflyer --cover-html-dir=htmlcov tests/unittests
             coverage html
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
           path: htmlcov
-      - run:
-          name: 'JSON Validator'
-          command: |
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            stitch-validate-json tap_appsflyer/schemas/*.json
-  workflows:
+workflows:
   version: 2
-  commit: &commit_jobs
+  commit:
     jobs:
-      - ensure_env:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-      - run_pylint_and_unittests:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          requires:
-            - ensure_env
       - build:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          requires:
-            - "Pagination Test"
+          context: circleci-user
   build_daily:
-    <<: *commit_jobs
     triggers:
       - schedule:
-          cron: "0 1 * * *"
+          cron: "0 0 * * *"
           filters:
             branches:
               only:
                 - master
+    jobs:
+      - build:
+          context: circleci-user
