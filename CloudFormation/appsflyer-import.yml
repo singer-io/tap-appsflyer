@@ -1,0 +1,307 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "AWS Glue Cloudformation template"
+
+
+
+###############################################################################
+###   PARAMETERS                                                            ###
+###############################################################################
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - STAGING
+      - PRODUCTION
+
+# On Staging better not to keep the processes running constantly. It costs $ and there is no need. 
+  EnableTriggers:
+    Type: String
+    Default: "Yes"
+    AllowedValues:
+      - "Yes"
+      - "No"
+
+  DataSourceName:
+    Type: String
+    Default: "appsflyer"
+
+###############################################################################
+###   MAPPING                                                               ###
+###############################################################################
+
+
+
+Mappings: 
+  # Using the mapping to keep the same naming convetion when bucket names has lowercases enviroment name and the enviroment name is added at the end of bucket name.
+  S3Bucket: 
+    BucketNames:
+      STAGING: "tgo-appsflyer-staging"
+      PRODUCTION: "tgo-appsflyer-production"
+  GlueDatabase: 
+    GlueDatabaseName:
+      STAGING: "staging_appsflyer_data"
+      PRODUCTION: "production_appsflyer_data"
+
+
+###############################################################################
+###   CONDITIONS                                                            ###
+###############################################################################
+
+Conditions:
+  EnableTriggers: !Equals [!Ref EnableTriggers, "Yes"]
+
+###############################################################################
+###   RESOURCES                                                             ###
+###############################################################################
+
+
+Resources:
+
+
+  # ###############################################################################
+  # ###   Bucket                                                                ###
+  # ###############################################################################
+
+  # AWS::Lambda::Permission is needed when you need to used the S3 notifications function.
+  ImportLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: "arn:aws:lambda:eu-west-1:082806765249:function:register_new_s3_files"
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub
+            - "arn:aws:s3:::${BucketName}"
+            - BucketName: !FindInMap [S3Bucket, BucketNames, !Ref Environment]
+  
+  # S3 bucket where the data will be stored
+  S3:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !FindInMap [S3Bucket, BucketNames, !Ref Environment]
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: "s3:ObjectCreated:*"
+            Filter: 
+              S3Key:
+                Rules:
+                  - Name: "prefix"
+                    Value: "landing/"
+                  - Name: "suffix"
+                    Value: ".csv"
+            Function: "arn:aws:lambda:eu-west-1:082806765249:function:register_new_s3_files"
+    DeletionPolicy: "Retain"
+
+
+
+
+
+  # ###############################################################################
+  # ###   Databases                                                             ###
+  # ###############################################################################
+  
+  
+  Database:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Description: "DB from aws-costs data"
+        Name: !FindInMap [GlueDatabase, GlueDatabaseName, !Ref Environment]
+    DeletionPolicy: "Delete"
+
+
+  # ###############################################################################
+  # ###   Jobs                                                                  ###
+  # ###############################################################################
+
+  LandingJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command:
+        #Name attribute for an Apache Spark ETL job, this must be glueetl. For a Python shell job, it must be pythonshell.
+        Name: "pythonshell"
+        PythonVersion: "3.9"
+        ScriptLocation: !Sub "s3://aws-glue-scripts-082806765249-eu-west-1/${Environment}-${DataSourceName}/landing/landing.py"
+      DefaultArguments:
+        "--extra-py-files": !Sub "s3://aws-glue-scripts-082806765249-eu-west-1/${Environment}-${DataSourceName}/dependencies/glue_job_libs-0.6-py3-none-any.whl,s3://aws-glue-scripts-082806765249-eu-west-1/${Environment}-${DataSourceName}/dependencies/singer_python-5.12.1-py3-none-any.whl,s3://aws-glue-scripts-082806765249-eu-west-1/${Environment}-${DataSourceName}/dependencies/${DataSourceName}-1.0-py3-none-any.whl"
+        "--environment": !Sub "${Environment}"
+        "--data_source": !Sub "${DataSourceName}"
+        "--job_type": "landing"
+
+      Description: "Exports data from Appsflyer."
+      MaxCapacity: "1"
+      GlueVersion: "3.0"
+      Name: !Sub "${Environment}-${DataSourceName}-landing"
+      Role: 'arn:aws:iam::082806765249:role/service-role/AWSGlueServiceRole-default'
+      Timeout: 360
+    DeletionPolicy: "Delete"
+
+
+
+  TransformJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command:
+        #Name attribute for an Apache Spark ETL job, this must be glueetl. For a Python shell job, it must be pythonshell.
+        Name: "pythonshell"
+        PythonVersion: "3.9"
+        ScriptLocation: !Sub "s3://aws-glue-scripts-082806765249-eu-west-1/${Environment}-${DataSourceName}/transform/transform.py"
+      DefaultArguments:
+        "--extra-py-files": !Sub "s3://aws-glue-scripts-082806765249-eu-west-1/${Environment}-${DataSourceName}/dependencies/glue_job_libs-0.6-py3-none-any.whl,s3://aws-glue-scripts-082806765249-eu-west-1/${Environment}-${DataSourceName}/dependencies/singer_python-5.12.1-py3-none-any.whl,s3://aws-glue-scripts-082806765249-eu-west-1/${Environment}-${DataSourceName}/dependencies/${DataSourceName}-1.0-py3-none-any.whl"
+        "--environment": !Sub "${Environment}"
+        "--data_source": !Sub "${DataSourceName}"
+        "--job_type": "transform"
+      Description: "Transforms the CSV files to parquet fromat."
+      MaxCapacity: "1"
+      GlueVersion: "3.0"
+      Name: !Sub "${Environment}-${DataSourceName}-transform"
+      Role: 'arn:aws:iam::082806765249:role/service-role/AWSGlueServiceRole-default'
+      Timeout: 360
+    DeletionPolicy: "Delete"
+
+
+
+  # ###############################################################################
+  # ###   Crawler                                                               ###
+  # ###############################################################################
+
+  Crawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Configuration: '
+        {
+           "Version": 1.0,
+           "Grouping": {
+              "TableGroupingPolicy": "CombineCompatibleSchemas" }
+        }'
+      DatabaseName: !Ref Database
+      Description: ""
+      Name: !Sub "${Environment}-${DataSourceName}-crawler"
+      Role: 'arn:aws:iam::082806765249:role/service-role/AWSGlueServiceRole-default'
+      SchemaChangePolicy:
+        DeleteBehavior: "DEPRECATE_IN_DATABASE"
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+
+      Targets:
+        S3Targets:
+          - Path: !Sub
+            - "s3://${BucketName}/data/appsflyer_events"
+            - BucketName: !FindInMap [S3Bucket, BucketNames, !Ref Environment]
+    DeletionPolicy: "Delete"
+
+
+  # ###############################################################################
+  # ###   Workflows                                                             ###
+  # ###############################################################################
+
+
+  Workflow:
+    Type: AWS::Glue::Workflow
+    Properties:
+      Name: !Sub "${Environment}-${DataSourceName}-workflow"
+    DeletionPolicy: "Delete"
+
+
+  # ###############################################################################
+  # ###   Triggers                                                              ###
+  # ###############################################################################
+
+
+  #################### Workflow triggers ###########################################
+
+
+
+  LandingTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: !Sub "${Environment}-${DataSourceName}-landing-trigger"
+      Type: !If [EnableTriggers, "SCHEDULED", "ON_DEMAND"]
+      Schedule: "cron(0 2 * * ? *)"
+      StartOnCreation: !If [EnableTriggers, "true", "false"]
+      Actions:
+        - JobName: !Ref LandingJob
+      WorkflowName: !Ref Workflow
+    DeletionPolicy: "Delete"
+
+
+  LandingFinishedTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: !Sub "${Environment}-${DataSourceName}-landing-finished"
+      Type: "CONDITIONAL"
+      StartOnCreation: "true"
+      Actions:
+        - JobName: !Ref TransformJob
+      Predicate:
+        Logical: "AND"
+        Conditions:
+          - LogicalOperator: "EQUALS"
+            State: "SUCCEEDED"
+            JobName: !Ref LandingJob
+      WorkflowName: !Ref Workflow      
+    DeletionPolicy: "Delete"
+
+
+  TransformFinishedTrigger:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: !Sub "${Environment}-${DataSourceName}-crawler-start"
+      Type: "CONDITIONAL"
+      StartOnCreation: "true"
+      Actions:
+        - CrawlerName: !Ref Crawler
+      Predicate:
+        Logical: "AND"
+        Conditions:
+          - LogicalOperator: "EQUALS"
+            State: "SUCCEEDED"
+            JobName: !Ref TransformJob
+      WorkflowName: !Ref Workflow
+    DeletionPolicy: "Delete"
+
+
+
+
+  # ###############################################################################
+  # ###   Permissions                                                           ###
+  # ###############################################################################
+
+  # Assign the TAG which is used for access management. TAGs are creates in "${Environment}-lake-formation-setup" stack.
+  AdminTagOnDatabase:
+    Type: AWS::LakeFormation::TagAssociation
+    Properties:
+      Resource:
+        Database:
+          CatalogId: !Sub "${AWS::AccountId}"
+          Name: !Ref Database
+      LFTags:
+        - CatalogId: !Sub "${AWS::AccountId}"
+          TagKey: !Sub "${Environment}-Admin"
+          TagValues:
+            - "default"            
+         
+
+  DataAnalystTagOnDatabase:
+    Type: AWS::LakeFormation::TagAssociation
+    Properties:
+      Resource:
+        Database:
+          CatalogId: !Sub "${AWS::AccountId}"
+          Name: !Ref Database
+      LFTags:
+        - CatalogId: !Sub "${AWS::AccountId}"
+          TagKey: !Sub "${Environment}-DataAnalysts"
+          TagValues:
+            - "default"            
+

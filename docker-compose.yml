@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  glue_pyspark:
+    build: .
+    ports:
+      - "4040:4040"
+      - "18080:18080"
+    # command: pyspark
+    # command: /bin/bash
+    volumes:
+      - type: bind
+        source: ~/.aws
+        target: /home/glue_user/.aws
+      - type: bind
+        source: ./
+        target: /home/glue_user/workspace/
+      - type: bind
+        source: ~/.ssh/id_ed25519
+        target: /home/glue_user/.ssh/id_ed25519
+    environment:
+      - AWS_PROFILE=data
+      - DISABLE_SSL=true
+      - AWS_REGION=eu-west-1
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+
+

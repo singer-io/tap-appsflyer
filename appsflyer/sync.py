@@ -14,10 +14,11 @@ from singer import utils
 
 from glue_job_libs import general_utils as gu
 from glue_job_libs import s3_util as s3
+from appsflyer.job_config import JobConfig
 
-import json
 
-from tap_appsflyer import credentials
+
+
 LOGGER = singer.get_logger()
 SESSION = requests.Session()
 
@@ -104,10 +105,7 @@ def get_abs_path(path):
 
 
 def update_state_file(state):
-    with open(get_abs_path(CONFIG["state_file_path"]), 'w') as f:
-        json.dump(state, f)
-    s3_client.upload_file_to_s3(CONFIG["job_config_bucket"],  get_abs_path(CONFIG["state_file_path"]), CONFIG["state_file_path"])
-
+    s3_client.upload_json_to_s3(bucket=CONFIG["job_config_bucket"], json_object=state, file_name_in_bucket=CONFIG["state_file_path"])
 
 def load_schema(entity_name):
     schema = utils.load_json(get_abs_path('schemas/{}.json'.format(entity_name)))
@@ -288,27 +286,20 @@ def do_sync():
     LOGGER.info("Sync completed")
 
 
-def main(bucket, config_file, state_file):
+def run(job_config:JobConfig, state):
 
     all_apps = [
         'com.transfergo.android',
         'id1110641576'
     ]
 
-    conn_info = credentials.Config()
+    STATE.update(state.state)
 
-    local_file = get_abs_path(state_file)
-    gu.create_dir_if_not_exists(local_file)
-    s3_client.download_file(bucket, state_file, local_file)
-    STATE.update(utils.load_json(local_file))
 
-    job_config = s3_client.get_s3_file(bucket=bucket, file=config_file)
-    job_config = json.loads(job_config)
-
-    CONFIG["api_token"] = conn_info.access_token
-    CONFIG["destination_bucket"] = job_config['destination_bucket']
-    CONFIG["state_file_path"] = state_file
-    CONFIG["job_config_bucket"] = bucket
+    CONFIG["api_token"] = job_config.get_access_token()
+    CONFIG["destination_bucket"] = job_config.job_output_bucket
+    CONFIG["state_file_path"] = job_config.job_state_file
+    CONFIG["job_config_bucket"] = job_config.glue_bucket
 
 
     for app in all_apps:
@@ -316,5 +307,3 @@ def main(bucket, config_file, state_file):
         do_sync()
 
 
-if __name__ == '__main__':
-    main(bucket='aws-glue-scripts-082806765249-eu-west-1', config_file='appsflyer/config/config.json', state_file='appsflyer/config/state.json')

@@ -1,0 +1,14 @@
+{
+    "name": "Glue-ETL",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "glue_pyspark",
+    "workspaceFolder": "/home/glue_user/workspace/",
+	"shutdownAction": "stopCompose",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python"
+			]
+		}
+	}
+  }
