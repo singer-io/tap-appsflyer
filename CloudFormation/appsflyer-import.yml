@@ -183,7 +183,13 @@ Resources:
         {
            "Version": 1.0,
            "Grouping": {
-              "TableGroupingPolicy": "CombineCompatibleSchemas" }
+              "TableGroupingPolicy": "CombineCompatibleSchemas" 
+            },
+            "CrawlerOutput": {
+              "Partitions": { 
+                "AddOrUpdateBehavior": "InheritFromTable"
+              }
+            }
         }'
       DatabaseName: !Ref Database
       Description: ""
@@ -198,7 +204,48 @@ Resources:
           - Path: !Sub
             - "s3://${BucketName}/data/appsflyer_events"
             - BucketName: !FindInMap [S3Bucket, BucketNames, !Ref Environment]
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=website_events/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=website_visits/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=website_assisted_installs/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=skad_srn_advertising_dimensions/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=skad_redownloads/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=skad_postbacks/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=skad_postbacks_copy/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=skad_installs/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=skad_inapps/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=conversion_paths/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=cohort_user_acquisition/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=cohort_unified/"
+            Exclusions:
+              - "**/_SUCCESS"
+          - Path: "s3://af-datalocker-tgo-appsflyer-export/3ae2-acc-h6kZafvC-3ae2/data-locker-hourly/t=cohort_retargeting/"
+            Exclusions:
+              - "**/_SUCCESS"
     DeletionPolicy: "Delete"
+
+
 
 
   # ###############################################################################
