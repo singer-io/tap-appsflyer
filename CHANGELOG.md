@@ -1,7 +1,8 @@
 # Changelog
 
 ## 0.1.0
-  * Support for api token v2  
+  * Support for api token v2
+  * Dependabot update [#43](https://github.com/singer-io/tap-appsflyer/pull/43)
 
 ## 0.0.13
   * Add organic installations[#20](https://github.com/singer-io/tap-appsflyer/pull/20)
