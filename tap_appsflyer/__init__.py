@@ -152,13 +152,10 @@ def request(url, api_token, params=None):
     params = params or {}
     headers = {}
 
-    if len(api_token) > 36:
-        if re.match(re.compile('(^[\w-]+\.[\w-]+\.[\w-]+$)'), api_token):
-            headers["Authorization"] = "Bearer " + api_token
-        else:
-            raise Exception("Invalid AppsFlyer V2 token")
-    else:
-        params["api_token"] = api_token
+    try:
+        headers["Authorization"] = "Bearer " + api_token
+    except Exception as e:
+        LOGGER.error("api token error: {error}".format(error=str(e)))
 
     if "user_agent" in CONFIG:
         headers["User-Agent"] = CONFIG["user_agent"]
