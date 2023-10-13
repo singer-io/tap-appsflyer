@@ -30,9 +30,9 @@ STATE = {}
 
 
 ENDPOINTS = {
-    "installs": "/export/{app_id}/installs_report/v5",
-    "organic_installs": "/export/{app_id}/organic_installs_report/v5",
-    "in_app_events": "/export/{app_id}/in_app_events_report/v5"
+    "installs": "/api/raw-data/export/app/{app_id}/installs_report/v5",
+    "organic_installs": "/api/raw-data/export/app/{app_id}/organic_installs_report/v5",
+    "in_app_events": "/api/raw-data/export/app/{app_id}/in_app_events_report/v5"
 }
 
 
@@ -76,7 +76,7 @@ def get_base_url():
     if "base_url" in CONFIG:
         return CONFIG["base_url"]
     else:
-        return "https://hq.appsflyer.com"
+        return "https://hq1.appsflyer.com"
 
 
 def get_url(endpoint, **kwargs):
