@@ -30,9 +30,9 @@ STATE = {}
 
 
 ENDPOINTS = {
-    "installs": "/export/{app_id}/installs_report/v5",
-    "organic_installs": "/export/{app_id}/organic_installs_report/v5",
-    "in_app_events": "/export/{app_id}/in_app_events_report/v5"
+    "installs": "/api/raw-data/export/app/{app_id}/installs_report/v5",
+    "organic_installs": "/api/raw-data/export/app/{app_id}/organic_installs_report/v5",
+    "in_app_events": "/api/raw-data/export/app/{app_id}/in_app_events_report/v5"
 }
 
 
@@ -76,7 +76,7 @@ def get_base_url():
     if "base_url" in CONFIG:
         return CONFIG["base_url"]
     else:
-        return "https://hq.appsflyer.com"
+        return "https://hq1.appsflyer.com"
 
 
 def get_url(endpoint, **kwargs):
@@ -147,10 +147,15 @@ def parse_source_from_url(url):
                       giveup=giveup,
                       factor=2)
 @utils.ratelimit(10, 1)
-def request(url, params=None):
+def request(url, api_token, params=None):
 
     params = params or {}
     headers = {}
+
+    try:
+        headers["Authorization"] = "Bearer " + api_token
+    except Exception as e:
+        LOGGER.error("api token error: {error}".format(error=str(e)))
 
     if "user_agent" in CONFIG:
         headers["User-Agent"] = CONFIG["user_agent"]
@@ -284,10 +289,10 @@ def sync_installs():
     params = dict()
     params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
     params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
-    params["api_token"] = CONFIG["api_token"]
+    api_token = CONFIG["api_token"]
 
     url = get_url("installs", app_id=CONFIG["app_id"])
-    request_data = request(url, params)
+    request_data = request(url, api_token, params)
 
     csv_data = RequestToCsvAdapter(request_data)
     reader = csv.DictReader(csv_data, fieldnames)
@@ -310,7 +315,7 @@ def sync_installs():
     singer.write_state(STATE)
 
 def sync_organic_installs():
-    
+
     schema = load_schema("raw_data/organic_installs")
     singer.write_schema("organic_installs", schema, [
         "event_time",
@@ -413,10 +418,10 @@ def sync_organic_installs():
     params = dict()
     params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
     params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
-    params["api_token"] = CONFIG["api_token"]
+    api_token = CONFIG["api_token"]
 
     url = get_url("organic_installs", app_id=CONFIG["app_id"])
-    request_data = request(url, params)
+    request_data = request(url, api_token, params)
 
     csv_data = RequestToCsvAdapter(request_data)
     reader = csv.DictReader(csv_data, fieldnames)
@@ -539,10 +544,10 @@ def sync_in_app_events():
         params = dict()
         params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
         params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
-        params["api_token"] = CONFIG["api_token"]
+        api_token = CONFIG["api_token"]
 
         url = get_url("in_app_events", app_id=CONFIG["app_id"])
-        request_data = request(url, params)
+        request_data = request(url, api_token, params)
 
         csv_data = RequestToCsvAdapter(request_data)
         reader = csv.DictReader(csv_data, fieldnames)
