@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0
+  * Support for api token v2
+  * Dependabot update [#43](https://github.com/singer-io/tap-appsflyer/pull/43)
+
+## 0.0.13
+  * Add organic installations[#20](https://github.com/singer-io/tap-appsflyer/pull/20)
+  * Add Helper Function to remove whitespaces from config and respective unittest[#29](https://github.com/singer-io/tap-appsflyer/pull/29)
+  * Added data restrictions of no more than 90 days from Current date[#30](https://github.com/singer-io/tap-appsflyer/pull/30)
+
+## 0.0.12
+  * Adds safety try/catch to bookmarking logic for when `attributed_touch_time` does not exist on `installs` stream rows [#24](https://github.com/singer-io/tap-appsflyer/pull/24)
+
 ## 0.0.11
   * Updates `requests` to version `2.20.0` in response to CVE 2018-18074 [#13](https://github.com/singer-io/tap-appsflyer/pull/13)
 
