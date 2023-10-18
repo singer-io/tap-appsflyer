@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='tap-appsflyer',
-    version='0.0.13',
+    version='0.1.0',
     description='Singer.io tap for extracting data from the AppsFlyer API',
     author='Stitch, Inc.',
     url='http://singer.io',
@@ -13,7 +13,7 @@ setup(
     install_requires=[
         'attrs==16.3.0',
         'singer-python==5.3.3',
-        'requests==2.20.0',
+        'requests==2.31.0',
         'backoff==1.3.2',
     ],
     extras_require={
