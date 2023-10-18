@@ -11,10 +11,10 @@ setup(
     classifiers=['Programming Language :: Python :: 3 :: Only'],
     py_modules=['tap_appsflyer'],
     install_requires=[
-        'attrs==16.3.0',
-        'singer-python==5.3.3',
+        'attrs',
+        'singer-python==5.13.0',
         'requests==2.31.0',
-        'backoff==1.3.2',
+        'backoff',
     ],
     extras_require={
         'dev': [
