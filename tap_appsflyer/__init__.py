@@ -12,6 +12,8 @@ import backoff
 import requests
 import singer
 
+import pytz
+
 from singer import utils
 
 
@@ -46,7 +48,7 @@ def clean_config(config: dict) -> dict:
 
 
 def af_datetime_str_to_datetime(s):
-    return datetime.datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
+    return datetime.datetime.strptime_to_utc(s.strip(), "%Y-%m-%d %H:%M:%S")
 
 
 def get_restricted_start_date(date: str) -> datetime.datetime:
@@ -59,12 +61,12 @@ def get_restricted_start_date(date: str) -> datetime.datetime:
 
 def get_start(key):
     if key in STATE:
-        return  get_restricted_start_date(STATE[key])
+        return  utils.strptime_to_utc(STATE[key])
 
     if "start_date" in CONFIG:
-        return  get_restricted_start_date(CONFIG["start_date"])
+        return  utils.strptime_to_utc(CONFIG["start_date"])
 
-    return datetime.datetime.now() - datetime.timedelta(days=30)
+    return datetime.datetime.now(pytz.utc) - datetime.timedelta(days=30)
 
 
 def get_stop(start_datetime, stop_time, days=30):
@@ -279,7 +281,7 @@ def sync_installs():
     )
 
     from_datetime = get_start("installs")
-    to_datetime = get_stop(from_datetime, datetime.datetime.now())
+    to_datetime = get_stop(from_datetime, datetime.datetime.now(pytz.utc))
 
     if to_datetime < from_datetime:
         LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
@@ -304,8 +306,8 @@ def sync_installs():
         singer.write_record("installs", record)
         # AppsFlyer returns records in order of most recent first.
         try:
-            if utils.strptime(record["attributed_touch_time"]) > bookmark:
-                bookmark = utils.strptime(record["attributed_touch_time"])
+            if utils.strptime_to_utc(record["attributed_touch_time"]) > bookmark:
+                bookmark = utils.strptime_to_utc(record["attributed_touch_time"])
         except:
             LOGGER.error("failed to get attributed_touch_time")
 
@@ -534,7 +536,7 @@ def sync_in_app_events():
         "original_url",
     )
 
-    stop_time = datetime.datetime.now()
+    stop_time = datetime.datetime.now(pytz.utc)
     from_datetime = get_start("in_app_events")
     to_datetime = get_stop(from_datetime, stop_time, 10)
 
@@ -558,8 +560,8 @@ def sync_in_app_events():
             record = xform(row, schema)
             singer.write_record("in_app_events", record)
             # AppsFlyer returns records in order of most recent first.
-            if utils.strptime(record["event_time"]) > bookmark:
-                bookmark = utils.strptime(record["event_time"])
+            if utils.strptime_to_utc(record["event_time"]) > bookmark:
+                bookmark = utils.strptime_to_utc(record["event_time"])
 
         # Write out state
         utils.update_state(STATE, "in_app_events", bookmark)
