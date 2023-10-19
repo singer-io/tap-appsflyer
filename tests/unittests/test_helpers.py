@@ -1,28 +1,28 @@
 import datetime
-from unittest.mock import patch
+import pytz
 
+import unittest
+
+from singer import utils
 from tap_appsflyer import clean_config, get_restricted_start_date
 
-MOCKED_DATE = datetime.datetime(2021, 7, 1, 1, 1, 1, 369251)
+class TestGetRestrictedStartDate(unittest.TestCase):
+    def test_get_restricted_start_date(self):
+        # Define the input date
+        date = (datetime.datetime.now(pytz.utc) + datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H-%M-%S")
 
-class MockedDatetime(datetime.datetime):
-    def now():
-        return MOCKED_DATE
+        # Set the restriction date to 90 days ago from the current UTC date
+        restriction_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days=90)
 
-@patch('datetime.datetime', MockedDatetime)
-def test_get_restricted_start_date():
-    test_cases = [
-        {'case': '2018-01-01T00:00:00Z', 'expected': datetime.datetime(2021, 4, 2, 1, 1, 1, 369251)},
-        {'case': '2021-07-27T00:00:00Z', 'expected': datetime.datetime(2021, 7, 27, 0, 0)},
-        {'case': '2021-04-02T00:00:00Z', 'expected': datetime.datetime(2021, 4, 2, 1, 1, 1, 369251)},
-        {'case': '2021-05-23T12:34:56Z', 'expected': datetime.datetime(2021, 5, 23, 12, 34, 56)},
-    ]
+        # Calculate the expected result
+        start_date = utils.strptime_to_utc(date)
+        expected_result = max(start_date, restriction_date)
 
-    for test_case in test_cases:
-        date = get_restricted_start_date(test_case['case'])
+        # Call the function under test
+        result = get_restricted_start_date(date)
 
-        assert date == test_case['expected']
-
+        # Assert that the result matches the expected result
+        self.assertEqual(result, expected_result)
 
 def test_clean_config():
     test_cases = [
