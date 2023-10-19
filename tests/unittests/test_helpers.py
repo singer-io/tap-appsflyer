@@ -8,10 +8,10 @@ from tap_appsflyer import clean_config, get_restricted_start_date
 
 class TestGetRestrictedStartDate(unittest.TestCase):
     def test_get_restricted_start_date(self):
-        # Define the input date
-        date = (datetime.datetime.now(pytz.utc) + datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H-%M-%S")
+        # Define the start date
+        date = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d %H-%M-%S")
 
-        # Set the restriction date to 90 days ago from the current UTC date
+        # Set the restriction_date to 90 days ago from the current UTC date
         restriction_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days=90)
 
         # Calculate the expected result
