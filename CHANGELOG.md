@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+  * singer-python version upgrade to 5.13.0
+  * Code changes to make code compatible with the latest singer-python version[#17](https://github.com/singer-io/tap-appsflyer/pull/17)
+
 ## 0.1.0
   * Support for api token v2
   * Dependabot update [#43](https://github.com/singer-io/tap-appsflyer/pull/43)
