@@ -11,8 +11,9 @@ import attr
 import backoff
 import requests
 import singer
-import singer.stats
-from singer import transform
+
+import pytz
+
 from singer import utils
 
 
@@ -47,13 +48,13 @@ def clean_config(config: dict) -> dict:
 
 
 def af_datetime_str_to_datetime(s):
-    return datetime.datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
+    return datetime.datetime.strptime_to_utc(s.strip(), "%Y-%m-%d %H:%M:%S")
 
 
 def get_restricted_start_date(date: str) -> datetime.datetime:
     # https://support.appsflyer.com/hc/en-us/articles/207034366-API-Policy
-    restriction_date = datetime.datetime.now() - datetime.timedelta(days=90)
-    start_date = utils.strptime(date)
+    restriction_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days=90)
+    start_date = utils.strptime_to_utc(date)
 
     return max(start_date, restriction_date)
 
@@ -65,7 +66,7 @@ def get_start(key):
     if "start_date" in CONFIG:
         return  get_restricted_start_date(CONFIG["start_date"])
 
-    return datetime.datetime.now() - datetime.timedelta(days=30)
+    return datetime.datetime.now(pytz.utc) - datetime.timedelta(days=30)
 
 
 def get_stop(start_datetime, stop_time, days=30):
@@ -111,7 +112,7 @@ def xform(record, schema):
     xform_empty_strings_to_none(record)
     xform_boolean_field(record, "wifi")
     xform_boolean_field(record, "is_retargeting")
-    return transform.transform(record, schema)
+    return singer.transform(record, schema)
 
 
 @attr.s
@@ -163,9 +164,9 @@ def request(url, api_token, params=None):
     req = requests.Request("GET", url, params=params, headers=headers).prepare()
     LOGGER.info("GET %s", req.url)
 
-    with singer.stats.Timer(source=parse_source_from_url(url)) as stats:
+    with singer.metrics.http_request_timer(parse_source_from_url(url)) as timer:
         resp = SESSION.send(req)
-        stats.http_status_code = resp.status_code
+        timer.tags[singer.metrics.Tag.http_status_code] = resp.status_code
 
     if resp.status_code >= 400:
         LOGGER.error("GET %s [%s - %s]", req.url, resp.status_code, resp.content)
@@ -280,7 +281,7 @@ def sync_installs():
     )
 
     from_datetime = get_start("installs")
-    to_datetime = get_stop(from_datetime, datetime.datetime.now())
+    to_datetime = get_stop(from_datetime, datetime.datetime.now(pytz.utc))
 
     if to_datetime < from_datetime:
         LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
@@ -305,8 +306,8 @@ def sync_installs():
         singer.write_record("installs", record)
         # AppsFlyer returns records in order of most recent first.
         try:
-            if utils.strptime(record["attributed_touch_time"]) > bookmark:
-                bookmark = utils.strptime(record["attributed_touch_time"])
+            if utils.strptime_to_utc(record["attributed_touch_time"]) > bookmark:
+                bookmark = utils.strptime_to_utc(record["attributed_touch_time"])
         except:
             LOGGER.error("failed to get attributed_touch_time")
 
@@ -433,8 +434,8 @@ def sync_organic_installs():
         record = xform(row, schema)
         singer.write_record("organic_installs", record)
         # AppsFlyer returns records in order of most recent first.
-        if utils.strptime(record["event_time"]) > bookmark:
-            bookmark = utils.strptime(record["event_time"])
+        if utils.strptime_to_utc(record["event_time"]) > bookmark:
+            bookmark = utils.strptime_to_utc(record["event_time"])
 
     # Write out state
     utils.update_state(STATE, "organic_installs", bookmark)
@@ -535,7 +536,7 @@ def sync_in_app_events():
         "original_url",
     )
 
-    stop_time = datetime.datetime.now()
+    stop_time = datetime.datetime.now(pytz.utc)
     from_datetime = get_start("in_app_events")
     to_datetime = get_stop(from_datetime, stop_time, 10)
 
@@ -559,8 +560,8 @@ def sync_in_app_events():
             record = xform(row, schema)
             singer.write_record("in_app_events", record)
             # AppsFlyer returns records in order of most recent first.
-            if utils.strptime(record["event_time"]) > bookmark:
-                bookmark = utils.strptime(record["event_time"])
+            if utils.strptime_to_utc(record["event_time"]) > bookmark:
+                bookmark = utils.strptime_to_utc(record["event_time"])
 
         # Write out state
         utils.update_state(STATE, "in_app_events", bookmark)
