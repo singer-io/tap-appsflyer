@@ -315,6 +315,138 @@ def sync_installs():
     utils.update_state(STATE, "installs", bookmark)
     singer.write_state(STATE)
 
+
+def sync_installs_retargeting():
+
+    schema = load_schema("raw_data/installations_retargeting")
+    singer.write_schema("installs_retargeting", schema, [
+        "event_time",
+        "event_name",
+        "appsflyer_id"
+    ])
+
+    # This order matters
+    fieldnames = (
+        "attributed_touch_type",
+        "attributed_touch_time",
+        "install_time",
+        "event_time",
+        "event_name",
+        "event_value",
+        "event_revenue",
+        "event_revenue_currency",
+        "event_revenue_usd",
+        "event_source",
+        "is_receipt_validated",
+        "af_prt",
+        "media_source",
+        "af_channel",
+        "af_keywords",
+        "campaign",
+        "af_c_id",
+        "af_adset",
+        "af_adset_id",
+        "af_ad",
+        "af_ad_id",
+        "af_ad_type",
+        "af_siteid",
+        "af_sub_siteid",
+        "af_sub1",
+        "af_sub2",
+        "af_sub3",
+        "af_sub4",
+        "af_sub5",
+        "af_cost_model",
+        "af_cost_value",
+        "af_cost_currency",
+        "contributor1_af_prt",
+        "contributor1_media_source",
+        "contributor1_campaign",
+        "contributor1_touch_type",
+        "contributor1_touch_time",
+        "contributor2_af_prt",
+        "contributor2_media_source",
+        "contributor2_campaign",
+        "contributor2_touch_type",
+        "contributor2_touch_time",
+        "contributor3_af_prt",
+        "contributor3_media_source",
+        "contributor3_campaign",
+        "contributor3_touch_type",
+        "contributor3_touch_time",
+        "region",
+        "country_code",
+        "state",
+        "city",
+        "postal_code",
+        "dma",
+        "ip",
+        "wifi",
+        "operator",
+        "carrier",
+        "language",
+        "appsflyer_id",
+        "advertising_id",
+        "idfa",
+        "android_id",
+        "customer_user_id",
+        "imei",
+        "idfv",
+        "platform",
+        "device_type",
+        "os_version",
+        "app_version",
+        "sdk_version",
+        "app_id",
+        "app_name",
+        "bundle_id",
+        "is_retargeting",
+        "retargeting_conversion_type",
+        "af_attribution_lookback",
+        "af_reengagement_window",
+        "is_primary_attribution",
+        "user_agent",
+        "http_referrer",
+        "original_url",
+    )
+
+    from_datetime = get_start("installs_retargeting")
+    to_datetime = get_stop(from_datetime, datetime.datetime.now())
+
+    if to_datetime < from_datetime:
+        LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
+        return
+
+    params = dict()
+    params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
+    params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
+    params["api_token"] = CONFIG["api_token"]
+    params["reattr"] = True
+
+    url = get_url("installs", app_id=CONFIG["app_id"])
+    request_data = request(url, params)
+
+    csv_data = RequestToCsvAdapter(request_data)
+    reader = csv.DictReader(csv_data, fieldnames)
+
+    next(reader) # Skip the heading row
+
+    bookmark = from_datetime
+    for i, row in enumerate(reader):
+        record = xform(row, schema)
+        singer.write_record("installs_retargeting", record)
+        # AppsFlyer returns records in order of most recent first.
+        try:
+            if utils.strptime(record["attributed_touch_time"]) > bookmark:
+                bookmark = utils.strptime(record["attributed_touch_time"])
+        except:
+            LOGGER.error("failed to get attributed_touch_time")
+
+    # Write out state
+    utils.update_state(STATE, "installs_retargeting", bookmark)
+    singer.write_state(STATE)
+
+
 def sync_organic_installs():
 
     schema = load_schema("raw_data/organic_installs")
@@ -572,9 +704,142 @@ def sync_in_app_events():
         to_datetime = get_stop(from_datetime, stop_time, 10)
 
 
+def sync_in_app_events_retargeting():
+
+    schema = load_schema("raw_data/in_app_events_retargeting")
+    singer.write_schema("in_app_events_retargeting", schema, [
+        "event_time",
+        "event_name",
+        "appsflyer_id"
+    ])
+
+    # This order matters
+    fieldnames = (
+        "attributed_touch_type",
+        "attributed_touch_time",
+        "install_time",
+        "event_time",
+        "event_name",
+        "event_value",
+        "event_revenue",
+        "event_revenue_currency",
+        "event_revenue_usd",
+        "event_source",
+        "is_receipt_validated",
+        "af_prt",
+        "media_source",
+        "af_channel",
+        "af_keywords",
+        "campaign",
+        "af_c_id",
+        "af_adset",
+        "af_adset_id",
+        "af_ad",
+        "af_ad_id",
+        "af_ad_type",
+        "af_siteid",
+        "af_sub_siteid",
+        "af_sub1",
+        "af_sub2",
+        "af_sub3",
+        "af_sub4",
+        "af_sub5",
+        "af_cost_model",
+        "af_cost_value",
+        "af_cost_currency",
+        "contributor1_af_prt",
+        "contributor1_media_source",
+        "contributor1_campaign",
+        "contributor1_touch_type",
+        "contributor1_touch_time",
+        "contributor2_af_prt",
+        "contributor2_media_source",
+        "contributor2_campaign",
+        "contributor2_touch_type",
+        "contributor2_touch_time",
+        "contributor3_af_prt",
+        "contributor3_media_source",
+        "contributor3_campaign",
+        "contributor3_touch_type",
+        "contributor3_touch_time",
+        "region",
+        "country_code",
+        "state",
+        "city",
+        "postal_code",
+        "dma",
+        "ip",
+        "wifi",
+        "operator",
+        "carrier",
+        "language",
+        "appsflyer_id",
+        "advertising_id",
+        "idfa",
+        "android_id",
+        "customer_user_id",
+        "imei",
+        "idfv",
+        "platform",
+        "device_type",
+        "os_version",
+        "app_version",
+        "sdk_version",
+        "app_id",
+        "app_name",
+        "bundle_id",
+        "is_retargeting",
+        "retargeting_conversion_type",
+        "af_attribution_lookback",
+        "af_reengagement_window",
+        "is_primary_attribution",
+        "user_agent",
+        "http_referrer",
+        "original_url",
+    )
+
+    stop_time = datetime.datetime.now()
+    from_datetime = get_start("in_app_events_retargeting")
+    to_datetime = get_stop(from_datetime, stop_time, 10)
+
+    while from_datetime < stop_time:
+        LOGGER.info("Syncing data from %s to %s", from_datetime, to_datetime)
+        params = dict()
+        params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
+        params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
+        params["api_token"] = CONFIG["api_token"]
+        params["reattr"] = True
+
+        url = get_url("in_app_events", app_id=CONFIG["app_id"])
+        request_data = request(url, params)
+
+        csv_data = RequestToCsvAdapter(request_data)
+        reader = csv.DictReader(csv_data, fieldnames)
+
+        next(reader) # Skip the heading row
+
+        bookmark = from_datetime
+        for i, row in enumerate(reader):
+            record = xform(row, schema)
+            singer.write_record("in_app_events_retargeting", record)
+            # AppsFlyer returns records in order of most recent first.
+            if utils.strptime(record["event_time"]) > bookmark:
+                bookmark = utils.strptime(record["event_time"])
+
+        # Write out state
+        utils.update_state(STATE, "in_app_events_retargeting", bookmark)
+        singer.write_state(STATE)
+
+        # Move the timings forward
+        from_datetime = to_datetime
+        to_datetime = get_stop(from_datetime, stop_time, 10)
+
+
 STREAMS = [
     Stream("installs", sync_installs),
-    Stream("in_app_events", sync_in_app_events)
+    Stream("installs_retargeting", sync_installs_retargeting),
+    Stream("in_app_events", sync_in_app_events),
+    Stream("in_app_events_retargeting", sync_in_app_events_retargeting),
 ]
 
 
