@@ -13,7 +13,7 @@ setup(
     install_requires=[
         'attrs',
         'singer-python==5.13.0',
-        'requests==2.31.0',
+        'requests==2.32.0',
         'backoff',
     ],
     extras_require={
