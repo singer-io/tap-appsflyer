@@ -434,13 +434,13 @@
     "event_revenue": {
       "type": [
         "null",
-        "string"
+        "numeric"
       ]
     },
     "event_revenue_usd": {
       "type": [
         "null",
-        "string"
+        "numeric"
       ]
     },
     "event_revenue_currency": {
