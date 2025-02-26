@@ -1,0 +1,15 @@
+from typing import Dict, Iterator, List
+
+from singer import Transformer, get_logger, metrics, write_record
+from singer.utils import strftime, strptime_to_utc
+
+from tap_appsflyer.streams.abstracts import IncrementalStream
+
+LOGGER = get_logger()
+
+class Installs(IncrementalStream):
+    tap_stream_id = "installs"
+    key_properties = ["contact_id"]
+    replication_keys = ["attributed_touch_time"]
+    data_key = "data_key_value_1"
+    path = "/api/raw-data/export/app/{app_id}/installs_report/v5"
