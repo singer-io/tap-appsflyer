@@ -6,13 +6,13 @@ spec](https://github.com/singer-io/getting-started/blob/master/SPEC.md).
 
 This tap:
 
-- Pulls raw data from the [appsflyer API].
+- Pulls raw data from the [appsflyer API](https://dev.appsflyer.com/hc/reference/overview-5).
 - Extracts the following resources:
-    - Installs(https://github.com/singer-io)
+    - [Installs](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/installs_report/v5)
 
-    - Organic_installs(https://github.com/singer-io)
+    - [Organic Installs](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/organic_installs_report/v5)
 
-    - In_app_events(https://github.com/singer-io)
+    - [In App Events](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/in_app_events_report/v5)
 
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
@@ -21,19 +21,16 @@ This tap:
 ## Streams
 
 
-** [installs](https://github.com/singer-io)**
-- Data Key = data_key_value_1
-- Primary keys: ['contact_id']
+**[installs](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/installs_report/v5)**
+- Primary keys: ["event_time", "event_name", "appsflyer_id"]
 - Replication strategy: INCREMENTAL
 
-** [organic_installs](https://github.com/singer-io)**
-- Data Key = data_key_value_2
-- Primary keys: ['contact_id']
+**[organic_installs](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/organic_installs_report/v5)**
+- Primary keys: ["event_time", "event_name", "appsflyer_id"]
 - Replication strategy: INCREMENTAL
 
-** [in_app_events](https://github.com/singer-io)**
-- Data Key = data_key_value_3
-- Primary keys: ['contact_id']
+**[in_app_events](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/in_app_events_report/v5)**
+- Primary keys: ["event_time", "event_name", "appsflyer_id"]
 - Replication strategy: INCREMENTAL
 
 
@@ -59,21 +56,23 @@ This tap:
     > pip install singer-python
     > pip install target-stitch
     > pip install target-json
-    
+
     ```
     - [singer-tools](https://github.com/singer-io/singer-tools)
     - [target-stitch](https://github.com/singer-io/target-stitch)
 
 3. Create your tap's `config.json` file.  The tap config file for this tap should include these entries:
-   - `start_date` - the default value to use if no bookmark exists for an endpoint (rfc3339 date string)
+   - `start_date` (optional): the default value is (now - 30 days) to use if no bookmark/start_date exists for an endpoint (rfc3339 date string)
    - `user_agent` (string, optional): Process and email for API logging purposes. Example: `tap-appsflyer <api_user_email@your_company.com>`
-   - `request_timeout` (integer, `300`): Max time for which request should wait to get a response. Default request_timeout is 300 seconds.
-   
+   - `app_id`: Application ID of the respective Appsflyer app
+   - `api_token`: API token of the respective Appsflyer app
+
     ```json
     {
         "start_date": "2019-01-01T00:00:00Z",
         "user_agent": "tap-appsflyer <api_user_email@your_company.com>",
-        "request_timeout": 300,
+        "app_id": "abc1e2swewe",
+        "api_token": "askawqewdqwer123445666"
         ...
     }
 
@@ -81,11 +80,9 @@ This tap:
 
     ```json
     {
-        "currently_syncing": "engage",
+        "currently_syncing": "in_app_events",
         "bookmarks": {
-            "export": "2019-09-27T22:34:39.000000Z",
-            "funnels": "2019-09-28T15:30:26.000000Z",
-            "revenue": "2019-09-28T18:23:53Z"
+            "installs": "2019-09-27T22:34:39.000000Z"
         }
     }
     ```
@@ -117,9 +114,9 @@ This tap:
     ```
 
 6. Test the Tap
-    
+
     While developing the appsflyer tap, the following utilities were run in accordance with Singer.io best practices:
-    Pylint to improve [code quality](https://github.com/singer-io/getting-started/blob/master/docs/BEST_PRACTICES.md
+    Pylint to improve [code quality](https://github.com/singer-io/getting-started/blob/master/docs/BEST_PRACTICES.md)
     ```bash
     > pylint tap_appsflyer -d missing-docstring -d logging-format-interpolation -d too-many-locals -d too-many-arguments
     ```
@@ -128,7 +125,7 @@ This tap:
     Your code has been rated at 9.67/10
     ```
 
-    To [check the tap](https://github.com/singer-io/singer-tools
+    To [check the tap](https://github.com/singer-io/singer-tools)
     ```bash
     > tap-mixpanel --config tap_config.json --catalog catalog.json | singer-check-tap > state.json
     > tail -1 state.json > state.json.tmp && mv state.json.tmp state.json
@@ -149,4 +146,4 @@ This tap:
     ```
 ---
 
-Copyright &copy; 2019 Stitch
+Copyright &copy; 2017 Stitch

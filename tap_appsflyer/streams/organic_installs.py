@@ -9,9 +9,8 @@ LOGGER = get_logger()
 
 class OrganicInstalls(IncrementalStream):
     tap_stream_id = "organic_installs"
-    key_properties = ["contact_id"]
+    key_properties = ["event_time", "event_name", "appsflyer_id"]
     replication_keys = ["event_time"]
-    data_key = "data_key_value_2"
     path = "api/raw-data/export/app/{}/organic_installs_report/v5"
 
     def get_url_endpoint(self) -> str:

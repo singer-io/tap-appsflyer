@@ -7,7 +7,7 @@ from tap_appsflyer.sync import sync
 
 LOGGER = singer.get_logger()
 
-REQUIRED_CONFIG_KEYS = ["app_id", "api_token", "start_date"]
+REQUIRED_CONFIG_KEYS = ["app_id", "api_token"]
 
 def do_discover():
 

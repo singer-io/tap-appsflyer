@@ -4,7 +4,7 @@ import backoff
 import requests
 from requests import session
 from requests.exceptions import Timeout, ConnectionError, ChunkedEncodingError
-from singer import get_logger, metrics
+from singer import get_logger, metrics, utils
 
 from tap_appsflyer.exceptions import ERROR_CODE_EXCEPTION_MAPPING, appsflyerError, appsflyerBackoffError
 
@@ -66,6 +66,9 @@ class Client:
     def check_api_credentials(self) -> None:
         pass
 
+    def giveup(exc):
+        return exc.response is not None and 400 <= exc.response.status_code < 500
+
     def authenticate(self, headers: Dict, params: Dict) -> Tuple[Dict, Dict]:
         """Authenticates the request with the token"""
         headers["Authorization"] = f"Bearer {self.config.get('api_token')}"
@@ -93,6 +96,12 @@ class Client:
         max_tries=5,
         factor=2,
     )
+    @backoff.on_exception(backoff.expo,
+                      (requests.exceptions.RequestException),
+                      max_tries=5,
+                      giveup=giveup,
+                      factor=2)
+    @utils.ratelimit(10, 1)
     def __make_request(self, method: str, endpoint: str, **kwargs) -> Optional[Mapping[Any, Any]]:
         """
         Performs HTTP Operations
