@@ -6,9 +6,6 @@ from tap_appsflyer.client import Client
 LOGGER = singer.get_logger()
 
 
-
-
-
 def update_currently_syncing(state: Dict, stream_name: str) -> None:
     if not stream_name and singer.get_currently_syncing(state):
         del state["currently_syncing"]

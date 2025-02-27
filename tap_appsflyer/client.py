@@ -68,20 +68,17 @@ class Client:
 
     def authenticate(self, headers: Dict, params: Dict) -> Tuple[Dict, Dict]:
         """Authenticates the request with the token"""
-        headers[""] = self.config[""]
+        headers["Authorization"] = f"Bearer {self.config.get('api_token')}"
+        if "user_agent" in self.config:
+            headers["User-Agent"] = self.config["user_agent"]
         return headers, params
 
     def get(self, endpoint: str, params: Dict, headers: Dict, path: str = None) -> Any:
         """Calls the make_request method with a prefixed method type `GET`"""
         endpoint = endpoint or f"{self.base_url}/{path}"
         headers, params = self.authenticate(headers, params)
-        return self.__make_request("GET", endpoint, headers=headers, params=params, timeout=self.request_timeout)
-
-    def post(self, endpoint: str, params: Dict, headers: Dict, body: Dict, path: str = None) -> Any:
-        """Calls the make_request method with a prefixed method type `POST`"""
-
-        headers, params = self.authenticate(headers, params)
-        self.__make_request("POST", endpoint, headers=headers, params=params, data=body, timeout=self.request_timeout)
+        req = requests.Request("GET", endpoint, params=params, headers=headers).prepare()
+        return req
 
 
     @backoff.on_exception(

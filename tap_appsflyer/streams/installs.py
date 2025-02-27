@@ -12,4 +12,7 @@ class Installs(IncrementalStream):
     key_properties = ["contact_id"]
     replication_keys = ["attributed_touch_time"]
     data_key = "data_key_value_1"
-    path = "/api/raw-data/export/app/{app_id}/installs_report/v5"
+    path = "api/raw-data/export/app/{}/installs_report/v5"
+
+    def get_url_endpoint(self) -> str:
+        return f"{self.client.base_url}/{self.path.format(self.client.config.get('app_id'))}"

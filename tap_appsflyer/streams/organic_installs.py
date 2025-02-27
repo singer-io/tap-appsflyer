@@ -12,4 +12,7 @@ class OrganicInstalls(IncrementalStream):
     key_properties = ["contact_id"]
     replication_keys = ["event_time"]
     data_key = "data_key_value_2"
-    path = "/api/raw-data/export/app/{app_id}/organic_installs_report/v5"
+    path = "api/raw-data/export/app/{}/organic_installs_report/v5"
+
+    def get_url_endpoint(self) -> str:
+        return f"{self.client.base_url}/{self.path.format(self.client.config['app_id'])}"
