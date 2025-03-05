@@ -66,7 +66,7 @@ class Client:
     def check_api_credentials(self) -> None:
         pass
 
-    def giveup(exc):
+    def giveup(self, exc):
         return exc.response is not None and 400 <= exc.response.status_code < 500
 
     def authenticate(self, headers: Dict, params: Dict) -> Tuple[Dict, Dict]:

@@ -202,8 +202,6 @@ class BaseStream(ABC):
         """Interacts with api client interaction and pagination."""
         extraction_url = self.url_endpoint
         page_count = 1
-        if self.page_size:
-            self.params.update({"page": self.page_size})
 
         while True:
             response = self.client.get(
