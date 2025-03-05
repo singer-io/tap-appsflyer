@@ -243,6 +243,7 @@ class IncrementalStream(BaseStream):
     forced_replication_method = "INCREMENTAL"
     config_start_key = "start_date"
 
+    @staticmethod
     def get_restricted_start_date(self, date: str) -> datetime.datetime:
         # https://support.appsflyer.com/hc/en-us/articles/207034366-API-Policy
         restriction_date = utils.now() - datetime.timedelta(days=90)
