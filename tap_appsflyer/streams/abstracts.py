@@ -244,7 +244,7 @@ class IncrementalStream(BaseStream):
     config_start_key = "start_date"
 
     @staticmethod
-    def get_restricted_start_date(self, date: str) -> datetime.datetime:
+    def get_restricted_start_date(date: str) -> datetime.datetime:
         # https://support.appsflyer.com/hc/en-us/articles/207034366-API-Policy
         restriction_date = utils.now() - datetime.timedelta(days=90)
         start_date = strptime_to_utc(date)

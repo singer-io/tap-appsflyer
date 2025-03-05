@@ -20,7 +20,7 @@ class TestGetRestrictedStartDate(unittest.TestCase):
         expected_result = max(start_date, restriction_date)
 
         # Call the function under test
-        result = IncrementalStream.get_restricted_start_date(self, date)
+        result = IncrementalStream.get_restricted_start_date(date)
 
         # Assert that the result matches the expected result
         self.assertEqual(result, expected_result)
