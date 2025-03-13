@@ -7,6 +7,7 @@ from tap_appsflyer.streams.abstracts import IncrementalStream
 
 LOGGER = get_logger()
 
+
 class InAppEvents(IncrementalStream):
     tap_stream_id = "in_app_events"
     key_properties = ["event_time", "event_name", "appsflyer_id"]
@@ -14,4 +15,6 @@ class InAppEvents(IncrementalStream):
     path = "api/raw-data/export/app/{}/in_app_events_report/v5"
 
     def get_url_endpoint(self) -> str:
-        return f"{self.client.base_url}/{self.path.format(self.client.config['app_id'])}"
+        return (
+            f"{self.client.base_url}/{self.path.format(self.client.config['app_id'])}"
+        )

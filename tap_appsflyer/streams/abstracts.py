@@ -16,7 +16,7 @@ from singer import (
     write_bookmark,
     write_record,
     write_schema,
-    utils
+    utils,
 )
 from singer.utils import strftime, strptime_to_utc
 
@@ -27,88 +27,89 @@ SESSION = requests.Session()
 
 # This order matters
 fieldnames = (
-        "attributed_touch_type",
-        "attributed_touch_time",
-        "install_time",
-        "event_time",
-        "event_name",
-        "event_value",
-        "event_revenue",
-        "event_revenue_currency",
-        "event_revenue_usd",
-        "event_source",
-        "is_receipt_validated",
-        "af_prt",
-        "media_source",
-        "af_channel",
-        "af_keywords",
-        "campaign",
-        "af_c_id",
-        "af_adset",
-        "af_adset_id",
-        "af_ad",
-        "af_ad_id",
-        "af_ad_type",
-        "af_siteid",
-        "af_sub_siteid",
-        "af_sub1",
-        "af_sub2",
-        "af_sub3",
-        "af_sub4",
-        "af_sub5",
-        "af_cost_model",
-        "af_cost_value",
-        "af_cost_currency",
-        "contributor1_af_prt",
-        "contributor1_media_source",
-        "contributor1_campaign",
-        "contributor1_touch_type",
-        "contributor1_touch_time",
-        "contributor2_af_prt",
-        "contributor2_media_source",
-        "contributor2_campaign",
-        "contributor2_touch_type",
-        "contributor2_touch_time",
-        "contributor3_af_prt",
-        "contributor3_media_source",
-        "contributor3_campaign",
-        "contributor3_touch_type",
-        "contributor3_touch_time",
-        "region",
-        "country_code",
-        "state",
-        "city",
-        "postal_code",
-        "dma",
-        "ip",
-        "wifi",
-        "operator",
-        "carrier",
-        "language",
-        "appsflyer_id",
-        "advertising_id",
-        "idfa",
-        "android_id",
-        "customer_user_id",
-        "imei",
-        "idfv",
-        "platform",
-        "device_type",
-        "os_version",
-        "app_version",
-        "sdk_version",
-        "app_id",
-        "app_name",
-        "bundle_id",
-        "is_retargeting",
-        "retargeting_conversion_type",
-        "af_attribution_lookback",
-        "af_reengagement_window",
-        "is_primary_attribution",
-        "user_agent",
-        "http_referrer",
-        "original_url",
-    )
+    "attributed_touch_type",
+    "attributed_touch_time",
+    "install_time",
+    "event_time",
+    "event_name",
+    "event_value",
+    "event_revenue",
+    "event_revenue_currency",
+    "event_revenue_usd",
+    "event_source",
+    "is_receipt_validated",
+    "af_prt",
+    "media_source",
+    "af_channel",
+    "af_keywords",
+    "campaign",
+    "af_c_id",
+    "af_adset",
+    "af_adset_id",
+    "af_ad",
+    "af_ad_id",
+    "af_ad_type",
+    "af_siteid",
+    "af_sub_siteid",
+    "af_sub1",
+    "af_sub2",
+    "af_sub3",
+    "af_sub4",
+    "af_sub5",
+    "af_cost_model",
+    "af_cost_value",
+    "af_cost_currency",
+    "contributor1_af_prt",
+    "contributor1_media_source",
+    "contributor1_campaign",
+    "contributor1_touch_type",
+    "contributor1_touch_time",
+    "contributor2_af_prt",
+    "contributor2_media_source",
+    "contributor2_campaign",
+    "contributor2_touch_type",
+    "contributor2_touch_time",
+    "contributor3_af_prt",
+    "contributor3_media_source",
+    "contributor3_campaign",
+    "contributor3_touch_type",
+    "contributor3_touch_time",
+    "region",
+    "country_code",
+    "state",
+    "city",
+    "postal_code",
+    "dma",
+    "ip",
+    "wifi",
+    "operator",
+    "carrier",
+    "language",
+    "appsflyer_id",
+    "advertising_id",
+    "idfa",
+    "android_id",
+    "customer_user_id",
+    "imei",
+    "idfv",
+    "platform",
+    "device_type",
+    "os_version",
+    "app_version",
+    "sdk_version",
+    "app_id",
+    "app_name",
+    "bundle_id",
+    "is_retargeting",
+    "retargeting_conversion_type",
+    "af_attribution_lookback",
+    "af_reengagement_window",
+    "is_primary_attribution",
+    "user_agent",
+    "http_referrer",
+    "original_url",
+)
+
 
 class BaseStream(ABC):
     """
@@ -201,20 +202,17 @@ class BaseStream(ABC):
     def get_records(self) -> List:
         """Interacts with api client interaction and pagination."""
         extraction_url = self.url_endpoint
-        page_count = 1
 
-        while True:
-            response = self.client.get(
-                extraction_url, self.params, self.headers
-            )
-            if not response:
-                LOGGER.warning("No records found on Page %s", page_count)
-                break
+        response = self.client.get(extraction_url, self.params, self.headers)
+        if not response:
+            LOGGER.warning("No records found in the response")
 
-            with singer.metrics.http_request_timer(self.parse_source_from_url(self.client.base_url)) as timer:
-                resp = SESSION.send(response)
-                timer.tags[singer.metrics.Tag.http_status_code] = resp.status_code
-            return resp
+        with singer.metrics.http_request_timer(
+            self.parse_source_from_url(self.client.base_url)
+        ) as timer:
+            resp = SESSION.send(response)
+            timer.tags[singer.metrics.Tag.http_status_code] = resp.status_code
+        return resp
 
     def write_schema(self, schema, stream_name):
         """
@@ -226,15 +224,17 @@ class BaseStream(ABC):
             LOGGER.error("OS Error while writing schema for: {}".format(stream_name))
             raise err
 
+
 class RequestToCsvAdapter:
     def __init__(self, request_data):
-        self.request_data_iter = request_data.iter_lines();
+        self.request_data_iter = request_data.iter_lines()
 
     def __iter__(self):
         return self
 
     def __next__(self):
         return next(self.request_data_iter).decode("utf-8")
+
 
 class IncrementalStream(BaseStream):
     """Base Class for Incremental Stream."""
@@ -254,7 +254,7 @@ class IncrementalStream(BaseStream):
     def get_bookmark(self, state: dict, key: Any = None) -> int:
         """A wrapper for singer.get_bookmark to deal with compatibility for
         bookmark values or start values."""
-        get_bookmark_value =  get_bookmark(
+        get_bookmark_value = get_bookmark(
             state,
             self.tap_stream_id,
             key or self.replication_keys[0],
@@ -262,7 +262,7 @@ class IncrementalStream(BaseStream):
         )
 
         if get_bookmark_value:
-            return  self.get_restricted_start_date(get_bookmark_value)
+            return self.get_restricted_start_date(get_bookmark_value)
 
         LOGGER.warning("No bookmark value found, using default start date i.e. 30 days")
         return datetime.datetime.now(pytz.utc) - datetime.timedelta(days=30)
@@ -273,7 +273,9 @@ class IncrementalStream(BaseStream):
             stop_time = min(start_datetime + datetime.timedelta(days=days), stop_time)
             return stop_time
         else:
-            raise TypeError(f"Expected start_datetime to be a datetime object, got {type(start_datetime)}")
+            raise TypeError(
+                f"Expected start_datetime to be a datetime object, got {type(start_datetime)}"
+            )
 
     def write_bookmark(self, state: dict, key: Any = None, value: Any = None) -> Dict:
         """A wrapper for singer.get_bookmark to deal with compatibility for
@@ -287,11 +289,7 @@ class IncrementalStream(BaseStream):
         if value is None:
             return
 
-        if value.lower() == "TRUE".lower():
-            record[field_name] = True
-        else:
-            record[field_name] = False
-
+        record[field_name] = value.strip().lower() == "true"
 
     def xform_empty_strings_to_none(self, record):
         for key, value in record.items():
@@ -309,11 +307,13 @@ class IncrementalStream(BaseStream):
     ) -> Dict:
         self.url_endpoint = self.get_url_endpoint()
 
-        from_datetime = bookmark_date =self.get_bookmark(state)
+        bookmark_date = self.get_bookmark(state)
+        from_datetime = bookmark_date
+
         to_datetime = self.get_stop(from_datetime, datetime.datetime.now(pytz.utc))
 
-        current_max_bookmark_date = bookmark_date_to_utc = bookmark_date
-
+        bookmark_date_to_utc = bookmark_date
+        current_max_bookmark_date = bookmark_date_to_utc
 
         self.params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
         self.params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
@@ -322,21 +322,13 @@ class IncrementalStream(BaseStream):
             request_data = self.get_records()
             csv_data = RequestToCsvAdapter(request_data)
             try:
-                first_line = next(csv_data)
-                # Push the line back into the iterator
-                csv_data = iter([first_line] + list(csv_data))
+                reader = csv.DictReader(csv_data, fieldnames)
+                next(reader)  # Skip the header row
             except StopIteration:
                 LOGGER.warning("No data available in the CSV.")
                 return state
-            reader = csv.DictReader(csv_data, fieldnames)
 
-            try:
-                next(reader)  # Skip the header row
-            except StopIteration:
-                LOGGER.warning("No data available after header row.")
-                return state
-
-            for i, row in enumerate(reader):
+            for _, row in enumerate(reader):
                 xform_record = self.xform(row)
                 transformed_record = transformer.transform(
                     xform_record, schema, stream_metadata
@@ -345,10 +337,10 @@ class IncrementalStream(BaseStream):
                     record_timestamp = strptime_to_utc(
                         transformed_record[self.replication_keys[0]]
                     )
-                except KeyError as _:
+                except KeyError as ex:
                     LOGGER.error(
                         "Unable to process Record, Exception occurred: %s for stream %s",
-                        _,
+                        ex,
                         self.__class__,
                     )
                     continue

@@ -13,6 +13,7 @@ def update_currently_syncing(state: Dict, stream_name: str) -> None:
         singer.set_currently_syncing(state, stream_name)
     singer.write_state(state)
 
+
 def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:
     """
     Sync selected streams from catalog
@@ -23,7 +24,6 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:
         selected_streams.append(stream.stream)
     LOGGER.info("selected_streams: {}".format(selected_streams))
 
-
     last_stream = singer.get_currently_syncing(state)
     LOGGER.info("last/currently syncing stream: {}".format(last_stream))
 
@@ -33,16 +33,22 @@ def sync(client: Client, config: Dict, catalog: singer.Catalog, state) -> None:
             stream = STREAMS[stream_name](client)
             stream_catalog = catalog.get_stream(stream_name)
             stream_schema = stream_catalog.schema.to_dict()
-            stream_metadata =singer.metadata.to_map(stream_catalog.metadata)
+            stream_metadata = singer.metadata.to_map(stream_catalog.metadata)
 
             stream.write_schema(stream_schema, stream_name)
 
             LOGGER.info("START Syncing: {}".format(stream_name))
             update_currently_syncing(state, stream_name)
             total_records = stream.sync(
-                state=state, schema=stream_schema, stream_metadata=stream_metadata, transformer=transformer)
+                state=state,
+                schema=stream_schema,
+                stream_metadata=stream_metadata,
+                transformer=transformer,
+            )
 
             update_currently_syncing(state, None)
-            LOGGER.info("FINISHED Syncing: {}, total_records: {}".format(
-                stream_name,
-                total_records))
+            LOGGER.info(
+                "FINISHED Syncing: {}, total_records: {}".format(
+                    stream_name, total_records
+                )
+            )

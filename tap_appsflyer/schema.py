@@ -7,11 +7,13 @@ from tap_appsflyer.streams import STREAMS
 
 LOGGER = singer.get_logger()
 
+
 def get_abs_path(path: str) -> str:
     """
     Get the absolute path for the schema files.
     """
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
 
 def load_schema_references() -> Dict:
     """
@@ -21,8 +23,11 @@ def load_schema_references() -> Dict:
 
     shared_file_names = []
     if os.path.exists(shared_schema_path):
-        shared_file_names = [f for f in os.listdir(shared_schema_path)
-                            if os.path.isfile(os.path.join(shared_schema_path, f))]
+        shared_file_names = [
+            f
+            for f in os.listdir(shared_schema_path)
+            if os.path.isfile(os.path.join(shared_schema_path, f))
+        ]
 
     refs = {}
     for shared_schema_file in shared_file_names:
@@ -30,6 +35,7 @@ def load_schema_references() -> Dict:
             refs["shared/" + shared_schema_file] = json.load(data_file)
 
     return refs
+
 
 def get_schemas() -> Tuple[Dict, Dict]:
     """
@@ -49,18 +55,19 @@ def get_schemas() -> Tuple[Dict, Dict]:
 
         mdata = metadata.new()
         mdata = metadata.get_standard_metadata(
-                schema=schema,
-                key_properties = getattr(stream_obj, "key_properties"),
-                valid_replication_keys = (getattr(stream_obj, "replication_keys") or []),
-                replication_method = getattr(stream_obj, "replication_method")
-            )
+            schema=schema,
+            key_properties=getattr(stream_obj, "key_properties"),
+            valid_replication_keys=(getattr(stream_obj, "replication_keys") or []),
+            replication_method=getattr(stream_obj, "replication_method"),
+        )
         mdata = metadata.to_map(mdata)
-
 
         automatic_keys = getattr(stream_obj, "replication_keys") or []
         for field_name in schema["properties"].keys():
             if field_name in automatic_keys:
-                mdata = metadata.write(mdata, ("properties", field_name), "inclusion", "automatic")
+                mdata = metadata.write(
+                    mdata, ("properties", field_name), "inclusion", "automatic"
+                )
 
         mdata = metadata.to_list(mdata)
         field_metadata[stream_name] = mdata

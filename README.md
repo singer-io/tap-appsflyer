@@ -2,17 +2,17 @@
 
 This is a [Singer](https://singer.io) tap that produces JSON-formatted data
 following the [Singer
-spec](https://github.com/singer-io/getting-started/blob/master/SPEC.md).
+spec](https://github.com/singer-io/getting-started/blob/master/docs/SPEC.md).
 
 This tap:
 
 - Pulls raw data from the [appsflyer API](https://dev.appsflyer.com/hc/reference/overview-5).
 - Extracts the following resources:
-    - [Installs](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/installs_report/v5)
+    - [Installs](https://dev.appsflyer.com/hc/reference/get_app-id-installs-report-v5)
 
-    - [Organic Installs](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/organic_installs_report/v5)
+    - [Organic Installs](https://dev.appsflyer.com/hc/reference/get_app-id-organic-installs-report-v5)
 
-    - [In App Events](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/in_app_events_report/v5)
+    - [In App Events](https://dev.appsflyer.com/hc/reference/get_app-id-in-app-events-report-v5)
 
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
@@ -21,15 +21,15 @@ This tap:
 ## Streams
 
 
-**[installs](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/installs_report/v5)**
+**[installs](https://dev.appsflyer.com/hc/reference/get_app-id-installs-report-v5)**
 - Primary keys: ["event_time", "event_name", "appsflyer_id"]
 - Replication strategy: INCREMENTAL
 
-**[organic_installs](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/organic_installs_report/v5)**
+**[organic_installs](https://dev.appsflyer.com/hc/reference/get_app-id-organic-installs-report-v5)**
 - Primary keys: ["event_time", "event_name", "appsflyer_id"]
 - Replication strategy: INCREMENTAL
 
-**[in_app_events](https://hq1.appsflyer.com/api/raw-data/export/app/{app-id}/in_app_events_report/v5)**
+**[in_app_events](https://dev.appsflyer.com/hc/reference/get_app-id-in-app-events-report-v5)**
 - Primary keys: ["event_time", "event_name", "appsflyer_id"]
 - Replication strategy: INCREMENTAL
 
@@ -75,6 +75,7 @@ This tap:
         "api_token": "askawqewdqwer123445666"
         ...
     }
+    ```
 
     Optionally, also create a `state.json` file. `currently_syncing` is an optional attribute used for identifying the last object to be synced in case the job is interrupted mid-stream. The next run would begin where the last job left off.
 
@@ -93,9 +94,9 @@ This tap:
     tap-appsflyer --config config.json --discover > catalog.json
     ```
    See the Singer docs on discovery mode
-   [here](https://github.com/singer-io/getting-started/blob/master/docs/DISCOVERY_MODE.md
+   [here](https://github.com/singer-io/getting-started/blob/master/docs/DISCOVERY_MODE.md)
 
-5. Run the Tap in Sync Mode (with catalog) and [write out to state file](https://github.com/singer-io/getting-started/blob/master/docs/RUNNING_AND_DEVELOPING.md
+5. Run the Tap in Sync Mode (with catalog) and [write out to state file](https://github.com/singer-io/getting-started/blob/master/docs/RUNNING_AND_DEVELOPING.md)
 
     For Sync mode:
     ```bash
@@ -127,7 +128,7 @@ This tap:
 
     To [check the tap](https://github.com/singer-io/singer-tools)
     ```bash
-    > tap-mixpanel --config tap_config.json --catalog catalog.json | singer-check-tap > state.json
+    > tap-appsflyer --config tap_config.json --catalog catalog.json | singer-check-tap > state.json
     > tail -1 state.json > state.json.tmp && mv state.json.tmp state.json
     ```
 

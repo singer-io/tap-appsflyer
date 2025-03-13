@@ -7,6 +7,7 @@ from tap_appsflyer.streams.abstracts import IncrementalStream
 
 LOGGER = get_logger()
 
+
 class Installs(IncrementalStream):
     tap_stream_id = "installs"
     key_properties = ["event_time", "event_name", "appsflyer_id"]

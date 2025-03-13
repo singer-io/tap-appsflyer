@@ -6,10 +6,15 @@ from requests import session
 from requests.exceptions import Timeout, ConnectionError, ChunkedEncodingError
 from singer import get_logger, metrics, utils
 
-from tap_appsflyer.exceptions import ERROR_CODE_EXCEPTION_MAPPING, appsflyerError, appsflyerBackoffError
+from tap_appsflyer.exceptions import (
+    ERROR_CODE_EXCEPTION_MAPPING,
+    appsflyerError,
+    appsflyerBackoffError,
+)
 
 LOGGER = get_logger()
 REQUEST_TIMEOUT = 300
+
 
 def raise_for_error(response: requests.Response) -> None:
     """Raises the associated response exception. Takes in a response object,
@@ -24,15 +29,24 @@ def raise_for_error(response: requests.Response) -> None:
         response_json = {}
     if response.status_code != 200:
         if response_json.get("error"):
-            message = "HTTP-error-code: {}, Error: {}".format(response.status_code, response_json.get("error"))
+            message = "HTTP-error-code: {}, Error: {}".format(
+                response.status_code, response_json.get("error")
+            )
         else:
             message = "HTTP-error-code: {}, Error: {}".format(
                 response.status_code,
-                response_json.get("message", ERROR_CODE_EXCEPTION_MAPPING.get(
-                    response.status_code, {}).get("message", "Unknown Error")))
-        exc = ERROR_CODE_EXCEPTION_MAPPING.get(
-            response.status_code, {}).get("raise_exception", appsflyerError)
+                response_json.get(
+                    "message",
+                    ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
+                        "message", "Unknown Error"
+                    ),
+                ),
+            )
+        exc = ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
+            "raise_exception", appsflyerError
+        )
         raise exc(message, response) from None
+
 
 class Client:
     """
@@ -49,12 +63,10 @@ class Client:
         self._session = session()
         self.base_url = "https://hq1.appsflyer.com"
 
-
         config_request_timeout = config.get("request_timeout")
-        if config_request_timeout and float(config_request_timeout):
-            self.request_timeout = float(config_request_timeout)
-        else:
-            self.request_timeout = REQUEST_TIMEOUT
+        self.request_timeout = (
+            float(config_request_timeout) if config_request_timeout else REQUEST_TIMEOUT
+        )
 
     def __enter__(self):
         self.check_api_credentials()
@@ -80,9 +92,10 @@ class Client:
         """Calls the make_request method with a prefixed method type `GET`"""
         endpoint = endpoint or f"{self.base_url}/{path}"
         headers, params = self.authenticate(headers, params)
-        req = requests.Request("GET", endpoint, params=params, headers=headers).prepare()
+        req = requests.Request(
+            "GET", endpoint, params=params, headers=headers
+        ).prepare()
         return req
-
 
     @backoff.on_exception(
         wait_gen=backoff.expo,
@@ -91,18 +104,22 @@ class Client:
             ConnectionError,
             ChunkedEncodingError,
             Timeout,
-            appsflyerBackoffError
+            appsflyerBackoffError,
         ),
         max_tries=5,
         factor=2,
     )
-    @backoff.on_exception(backoff.expo,
-                      (requests.exceptions.RequestException),
-                      max_tries=5,
-                      giveup=giveup,
-                      factor=2)
+    @backoff.on_exception(
+        backoff.expo,
+        (requests.exceptions.RequestException),
+        max_tries=5,
+        giveup=giveup,
+        factor=2,
+    )
     @utils.ratelimit(10, 1)
-    def __make_request(self, method: str, endpoint: str, **kwargs) -> Optional[Mapping[Any, Any]]:
+    def __make_request(
+        self, method: str, endpoint: str, **kwargs
+    ) -> Optional[Mapping[Any, Any]]:
         """
         Performs HTTP Operations
         Args:
