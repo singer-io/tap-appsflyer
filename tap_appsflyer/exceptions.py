@@ -1,5 +1,5 @@
 class appsflyerError(Exception):
-    """class representing Generic Http error."""
+    """Class representing Generic Http error."""
 
     def __init__(self, message=None, response=None):
         super().__init__(message)
@@ -8,73 +8,73 @@ class appsflyerError(Exception):
 
 
 class appsflyerBackoffError(appsflyerError):
-    """class representing backoff error handling."""
+    """Class representing backoff error handling."""
 
     pass
 
 
 class appsflyerBadRequestError(appsflyerError):
-    """class representing 400 status code."""
+    """Class representing 400 status code."""
 
     pass
 
 
 class appsflyerUnauthorizedError(appsflyerError):
-    """class representing 401 status code."""
+    """Class representing 401 status code."""
 
     pass
 
 
 class appsflyerForbiddenError(appsflyerError):
-    """class representing 403 status code."""
+    """Class representing 403 status code."""
 
     pass
 
 
 class appsflyerNotFoundError(appsflyerError):
-    """class representing 404 status code."""
+    """Class representing 404 status code."""
 
     pass
 
 
 class appsflyerConflictError(appsflyerError):
-    """class representing 406 status code."""
+    """Class representing 406 status code."""
 
     pass
 
 
 class appsflyerUnprocessableEntityError(appsflyerBackoffError):
-    """class representing 409 status code."""
+    """Class representing 409 status code."""
 
     pass
 
 
 class appsflyerRateLimitError(appsflyerBackoffError):
-    """class representing 429 status code."""
+    """Class representing 429 status code."""
 
     pass
 
 
 class appsflyerInternalServerError(appsflyerBackoffError):
-    """class representing 500 status code."""
+    """Class representing 500 status code."""
 
     pass
 
 
 class appsflyerNotImplementedError(appsflyerBackoffError):
-    """class representing 501 status code."""
+    """Class representing 501 status code."""
 
     pass
 
 
 class appsflyerBadGatewayError(appsflyerBackoffError):
-    """class representing 502 status code."""
+    """Class representing 502 status code."""
 
     pass
 
 
 class appsflyerServiceUnavailableError(appsflyerBackoffError):
-    """class representing 503 status code."""
+    """Class representing 503 status code."""
 
     pass
 

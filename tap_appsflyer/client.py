@@ -3,13 +3,13 @@ from typing import Any, Dict, Mapping, Optional, Tuple
 import backoff
 import requests
 from requests import session
-from requests.exceptions import Timeout, ConnectionError, ChunkedEncodingError
+from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
 from singer import get_logger, metrics, utils
 
 from tap_appsflyer.exceptions import (
     ERROR_CODE_EXCEPTION_MAPPING,
-    appsflyerError,
     appsflyerBackoffError,
+    appsflyerError,
 )
 
 LOGGER = get_logger()
@@ -29,19 +29,9 @@ def raise_for_error(response: requests.Response) -> None:
         response_json = {}
     if response.status_code != 200:
         if response_json.get("error"):
-            message = "HTTP-error-code: {}, Error: {}".format(
-                response.status_code, response_json.get("error")
-            )
+            message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('error')}"
         else:
-            message = "HTTP-error-code: {}, Error: {}".format(
-                response.status_code,
-                response_json.get(
-                    "message",
-                    ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
-                        "message", "Unknown Error"
-                    ),
-                ),
-            )
+            message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('message', ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get('message', 'Unknown Error'))}"
         exc = ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
             "raise_exception", appsflyerError
         )
@@ -82,7 +72,7 @@ class Client:
         return exc.response is not None and 400 <= exc.response.status_code < 500
 
     def authenticate(self, headers: Dict, params: Dict) -> Tuple[Dict, Dict]:
-        """Authenticates the request with the token"""
+        """Authenticates the request with the token."""
         headers["Authorization"] = f"Bearer {self.config.get('api_token')}"
         if "user_agent" in self.config:
             headers["User-Agent"] = self.config["user_agent"]
@@ -132,7 +122,7 @@ class Client:
         Returns:
             Dict,List,None: Returns a `Json Parsed` HTTP Response or None if exception
         """
-        with metrics.http_request_timer(endpoint) as timer:
+        with metrics.http_request_timer(endpoint) as _:
             response = self._session.request(method, endpoint, **kwargs)
             raise_for_error(response)
 

@@ -1,22 +1,21 @@
 import csv
 import datetime
-import pytz
 import re
-import requests
-
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, List, Tuple
 
+import pytz
+import requests
 import singer
 from singer import (
     Transformer,
     get_bookmark,
     get_logger,
     metrics,
+    utils,
     write_bookmark,
     write_record,
     write_schema,
-    utils,
 )
 from singer.utils import strftime, strptime_to_utc
 
@@ -168,17 +167,14 @@ class BaseStream(ABC):
         return False
 
     def get_url_endpoint(self) -> str:
-        """
-        Get the URL endpoint for the stream
-        """
+        """Get the URL endpoint for the stream."""
         return self.url_endpoint
 
     @abstractmethod
     def sync(
         self, state: Dict, schema: Dict, stream_metadata: Dict, transformer: Transformer
     ) -> Dict:
-        """
-        Performs a replication sync for the stream.
+        """Performs a replication sync for the stream.
         ~~~
         Args:
          - state (dict): represents the state file for the tap.
@@ -215,13 +211,11 @@ class BaseStream(ABC):
         return resp
 
     def write_schema(self, schema, stream_name):
-        """
-        Write a schema message.
-        """
+        """Write a schema message."""
         try:
             write_schema(stream_name, schema, self.key_properties)
         except OSError as err:
-            LOGGER.error("OS Error while writing schema for: {}".format(stream_name))
+            LOGGER.error(f"OS Error while writing schema for: {stream_name}")
             raise err
 
 

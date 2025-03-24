@@ -1,6 +1,8 @@
-import sys
 import json
+import sys
+
 import singer
+
 from tap_appsflyer.client import Client
 from tap_appsflyer.discover import discover
 from tap_appsflyer.sync import sync
@@ -11,7 +13,6 @@ REQUIRED_CONFIG_KEYS = ["app_id", "api_token"]
 
 
 def do_discover():
-
     LOGGER.info("Starting discover")
     catalog = discover()
     json.dump(catalog.to_dict(), sys.stdout, indent=2)
@@ -20,7 +21,6 @@ def do_discover():
 
 @singer.utils.handle_top_exception(LOGGER)
 def main():
-
     parsed_args = singer.utils.parse_args(REQUIRED_CONFIG_KEYS)
     state = {}
     if parsed_args.state:

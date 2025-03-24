@@ -15,10 +15,6 @@ repos:
       - id: pretty-format-json
         args: ['--autofix','--no-sort-keys']
 
-  - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
-    hooks:
-      - id: isort
 
   - repo: https://github.com/psf/black
     rev: 22.8.0
