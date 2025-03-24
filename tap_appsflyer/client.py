@@ -32,6 +32,14 @@ def raise_for_error(response: requests.Response) -> None:
             message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('error')}"
         else:
             message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('message', ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get('message', 'Unknown Error'))}"
+            error_message = response_json.get(
+                "message",
+                ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
+                    "message", "Unknown Error"
+                ),
+            )
+            message = f"HTTP-error-code: {response.status_code}, Error: {error_message}"
+
         exc = ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
             "raise_exception", appsflyerError
         )
