@@ -31,7 +31,6 @@ def raise_for_error(response: requests.Response) -> None:
         if response_json.get("error"):
             message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('error')}"
         else:
-            message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('message', ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get('message', 'Unknown Error'))}"
             error_message = response_json.get(
                 "message",
                 ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(

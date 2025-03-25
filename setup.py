@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="tap-appsflyer",
-    version="1.0.0",
+    version="0.3.0",
     description="Singer.io tap for extracting data from appsflyer API",
     author="Stitch",
     url="http://singer.io",
