@@ -12,8 +12,8 @@ setup(
     py_modules=['tap_appsflyer'],
     install_requires=[
         'attrs',
-        'singer-python==5.13.0',
-        'requests==2.31.0',
+        'singer-python==5.13.2',
+        'requests==2.32.4',
         'backoff',
     ],
     extras_require={
