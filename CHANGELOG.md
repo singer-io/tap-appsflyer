@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.1
+  * Dependency upgrades [#49](https://github.com/singer-io/tap-appsflyer/pull/49)
+
 ## 0.2.0
   * singer-python version upgrade to 5.13.0
   * Code changes to make code compatible with the latest singer-python version[#17](https://github.com/singer-io/tap-appsflyer/pull/17)
