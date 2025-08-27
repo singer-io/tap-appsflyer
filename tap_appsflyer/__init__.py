@@ -47,10 +47,6 @@ def clean_config(config: dict) -> dict:
     return config
 
 
-def af_datetime_str_to_datetime(s):
-    return datetime.datetime.strptime_to_utc(s.strip(), "%Y-%m-%d %H:%M:%S")
-
-
 def get_restricted_start_date(date: str) -> datetime.datetime:
     # https://support.appsflyer.com/hc/en-us/articles/207034366-API-Policy
     restriction_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days=90)
@@ -85,10 +81,6 @@ def get_url(endpoint, **kwargs):
         raise ValueError("Invalid endpoint {}".format(endpoint))
     else:
         return get_base_url() + ENDPOINTS[endpoint].format(**kwargs)
-
-
-def xform_datetime_field(record, field_name):
-    record[field_name] = af_datetime_str_to_datetime(record[field_name]).isoformat()
 
 
 def xform_boolean_field(record, field_name):
