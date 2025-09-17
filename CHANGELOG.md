@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.0
+  * Adds discovery mode with `forced_replication_method` and `parent_tap_stream_id` metadata [#SAC-28811](https://github.com/singer-io/tap-appsflyer/pull/SAC-28811)
+
 ## 0.2.1
   * Dependency upgrades [#49](https://github.com/singer-io/tap-appsflyer/pull/49)
 

@@ -15,6 +15,7 @@ import singer
 import pytz
 
 from singer import utils
+from singer import metadata
 
 
 LOGGER = singer.get_logger()
@@ -119,6 +120,8 @@ def xform(record, schema):
 class Stream(object):
     name = attr.ib()
     sync = attr.ib()
+    forced_replication_method = attr.ib()
+    parent_tap_stream_id = attr.ib(default=None)
 
 
 def get_abs_path(path):
@@ -128,6 +131,45 @@ def get_abs_path(path):
 def load_schema(entity_name):
     schema = utils.load_json(get_abs_path('schemas/{}.json'.format(entity_name)))
     return schema
+
+
+def generate_metadata(stream, schema):
+    mdata = metadata.new()
+    mdata = metadata.write(mdata, (), 'forced-replication-method', stream.forced_replication_method)
+    if stream.parent_tap_stream_id is not None:
+        mdata = metadata.write(mdata, (), 'parent-tap-stream-id', stream.parent_tap_stream_id)
+
+    for field_name in schema['properties'].keys():
+        mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
+
+    return mdata
+
+
+def discover():
+    streams = get_streams()
+    catalog = {'streams': []}
+
+    for stream in streams:
+        schema_name = stream.name
+        if schema_name in ['installs']:
+            schema_path = 'raw_data/installations'
+        elif schema_name in ['organic_installs']:
+            schema_path = 'raw_data/organic_installs'
+        elif schema_name in ['in_app_events']:
+            schema_path = 'raw_data/in_app_events'
+        else:
+            continue
+
+        schema = load_schema(schema_path)
+        mdata = generate_metadata(stream, schema)
+
+        catalog['streams'].append({
+            'tap_stream_id': stream.name,
+            'schema': schema,
+            'metadata': metadata.to_list(mdata)
+        })
+
+    return catalog
 
 
 def giveup(exc):
@@ -573,17 +615,22 @@ def sync_in_app_events():
 
 
 STREAMS = [
-    Stream("installs", sync_installs),
-    Stream("in_app_events", sync_in_app_events)
+    Stream("installs", sync_installs, "INCREMENTAL"),
+    Stream("in_app_events", sync_in_app_events, "INCREMENTAL")
 ]
+
+
+def get_streams():
+    streams = STREAMS[:]
+    if "organic_installs" in CONFIG:
+        if CONFIG["organic_installs"]:
+            streams.append(Stream("organic_installs", sync_organic_installs, "INCREMENTAL"))
+    return streams
 
 
 def get_streams_to_sync(streams, state):
     target_stream = state.get("this_stream")
     result = streams
-    if "organic_installs" in CONFIG:
-        if CONFIG["organic_installs"]:
-            result.append(Stream("organic_installs", sync_organic_installs))
     if target_stream:
         result = list(itertools.dropwhile(lambda x: x.name != target_stream, streams))
     if not result:
@@ -593,7 +640,7 @@ def get_streams_to_sync(streams, state):
 
 def do_sync():
     LOGGER.info("do_sync()")
-    streams = get_streams_to_sync(STREAMS, STATE)
+    streams = get_streams_to_sync(get_streams(), STATE)
     LOGGER.info('Starting sync. Will sync these streams: %s', [stream.name for stream in streams])
     for stream in streams:
         LOGGER.info('Syncing %s', stream.name)
@@ -617,7 +664,11 @@ def main():
     if args.state:
         STATE.update(args.state)
 
-    do_sync()
+    if args.discover:
+        catalog = discover()
+        singer.write_json(catalog)
+    else:
+        do_sync()
 
 
 if __name__ == '__main__':
