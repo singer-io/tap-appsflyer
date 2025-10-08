@@ -570,6 +570,17 @@ def sync_in_app_events():
         params = dict()
         params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
         params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
+        
+        # Add optional event_name filter if provided in config
+        if "event_name" in CONFIG and CONFIG["event_name"]:
+            event_name_value = CONFIG["event_name"]
+            # Support both list and string formats
+            if isinstance(event_name_value, list):
+                params["event_name"] = ",".join(event_name_value)
+            else:
+                params["event_name"] = event_name_value
+            LOGGER.info("Filtering by event_name: %s", params["event_name"])
+        
         api_token = CONFIG["api_token"]
 
         url = get_url("in_app_events", app_id=CONFIG["app_id"])
