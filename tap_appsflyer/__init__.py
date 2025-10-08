@@ -51,6 +51,23 @@ def af_datetime_str_to_datetime(s):
     return datetime.datetime.strptime_to_utc(s.strip(), "%Y-%m-%d %H:%M:%S")
 
 
+def ensure_timezone_aware(dt):
+    """
+    Ensures a datetime object is timezone-aware (UTC).
+    If the datetime is naive, it assumes it's in UTC and adds timezone info.
+    If it's already timezone-aware, returns it as-is.
+    """
+    if dt is None:
+        return None
+    
+    if dt.tzinfo is None:
+        # Naive datetime - assume UTC
+        return dt.replace(tzinfo=pytz.utc)
+    else:
+        # Already timezone-aware
+        return dt
+
+
 def get_restricted_start_date(date: str) -> datetime.datetime:
     # https://support.appsflyer.com/hc/en-us/articles/207034366-API-Policy
     restriction_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days=90)
@@ -70,6 +87,14 @@ def get_start(key):
 
 
 def get_stop(start_datetime, stop_time, days=30):
+    """
+    Calculate the stop time for a sync operation.
+    Ensures both datetime objects are timezone-aware before comparison.
+    """
+    # Ensure both datetime objects are timezone-aware
+    start_datetime = ensure_timezone_aware(start_datetime)
+    stop_time = ensure_timezone_aware(stop_time)
+    
     return min(start_datetime + datetime.timedelta(days=days), stop_time)
 
 
@@ -410,7 +435,7 @@ def sync_organic_installs():
     )
 
     from_datetime = get_start("organic_installs")
-    to_datetime = get_stop(from_datetime, datetime.datetime.now())
+    to_datetime = get_stop(from_datetime, datetime.datetime.now(pytz.utc))
 
     if to_datetime < from_datetime:
         LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
@@ -545,6 +570,17 @@ def sync_in_app_events():
         params = dict()
         params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
         params["to"] = to_datetime.strftime("%Y-%m-%d %H:%M")
+        
+        # Add optional event_name filter if provided in config
+        if "event_name" in CONFIG and CONFIG["event_name"]:
+            event_name_value = CONFIG["event_name"]
+            # Support both list and string formats
+            if isinstance(event_name_value, list):
+                params["event_name"] = ",".join(event_name_value)
+            else:
+                params["event_name"] = event_name_value
+            LOGGER.info("Filtering by event_name: %s", params["event_name"])
+        
         api_token = CONFIG["api_token"]
 
         url = get_url("in_app_events", app_id=CONFIG["app_id"])
