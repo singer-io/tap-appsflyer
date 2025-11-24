@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.2.1
+
+## 0.3.0
+  * Complete refactoring of the tap [#47](https://github.com/singer-io/tap-appsflyer/pull/47)
+  * Fixes Dependabot issue [#2](https://github.com/singer-io/tap-appsflyer/security/dependabot/2)
+  * `singer-python` upgrade to 6.1.0 and `backoff` to 2.2.1
   * Dependency upgrades [#49](https://github.com/singer-io/tap-appsflyer/pull/49)
 
 ## 0.2.0

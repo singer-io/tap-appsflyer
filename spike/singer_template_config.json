@@ -1,0 +1,38 @@
+{
+    "tap_name": "appsflyer",
+    "required_config_keys": ["app_id", "api_token"],
+    "headers": {"Accept": "application/json"},
+    "params": {"from": "{start_date}", "to": "{end_date}"},
+    "base_url": "https://hq1.appsflyer.com",
+    "streams": [
+      {
+        "name": "installs",
+        "key_properties": ["event_time", "event_name", "appsflyer_id"],
+        "replication_method": "INCREMENTAL",
+        "replication_keys": ["attributed_touch_time"],
+        "path": "api/raw-data/export/app/{app_id}/installs_report/v5"
+      },
+      {
+        "name": "organic_installs",
+        "key_properties": ["event_time", "event_name", "appsflyer_id"],
+        "replication_method": "INCREMENTAL",
+        "replication_keys": ["event_time"],
+        "path": "api/raw-data/export/app/{app_id}/organic_installs_report/v5"
+      },
+      {
+        "name": "in_app_events",
+        "key_properties": ["event_time", "event_name", "appsflyer_id"],
+        "replication_method": "INCREMENTAL",
+        "replication_keys": ["event_time"],
+        "path": "api/raw-data/export/app/{app_id}/in_app_events_report/v5"
+      }
+
+    ],
+    "author": "Stitch",
+    "third_party_dependencies": [
+      "attrs==25.1.0",
+      "singer-python==6.1.0",
+      "requests==2.32.3",
+      "backoff==2.2.1"
+    ]
+  }
