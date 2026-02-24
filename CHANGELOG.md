@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.0.0
+  * Bump tap to major version [#47](https://github.com/singer-io/tap-appsflyer/pull/47)
 
 ## 0.3.0
   * Complete refactoring of the tap [#47](https://github.com/singer-io/tap-appsflyer/pull/47)
