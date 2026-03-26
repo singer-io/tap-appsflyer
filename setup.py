@@ -11,7 +11,7 @@ setup(
     install_requires=[
         "attrs==25.1.0",
         "singer-python==6.1.0",
-        "requests==2.32.5",
+        "requests==2.33.0",
         "backoff==2.2.1",
     ],
     entry_points="""
