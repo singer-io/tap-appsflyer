@@ -9,7 +9,7 @@ setup(
     classifiers=["Programming Language :: Python :: 3 :: Only"],
     py_modules=["tap_appsflyer"],
     install_requires=[
-        "attrs==25.1.0",
+        "attrs==25.3.0",
         "singer-python==6.1.0",
         "requests==2.32.5",
         "backoff==2.2.1",
