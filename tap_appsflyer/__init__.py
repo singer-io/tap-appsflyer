@@ -35,6 +35,8 @@ ENDPOINTS = {
     "in_app_events": "/export/{app_id}/in_app_events_report/v5"
 }
 
+MAX_QUERY_WINDOW_DAYS = 50
+
 
 def af_datetime_str_to_datetime(s):
     return datetime.datetime.strptime(s.strip(), "%Y-%m-%d %H:%M:%S")
@@ -50,7 +52,7 @@ def get_start(key):
     return datetime.datetime.now() - datetime.timedelta(days=30)
 
 
-def get_stop(start_datetime, stop_time, days=30):
+def get_stop(start_datetime, stop_time, days=MAX_QUERY_WINDOW_DAYS):
     return min(start_datetime + datetime.timedelta(days=days), stop_time)
 
 
@@ -256,12 +258,16 @@ def sync_installs():
         "original_url",
     )
 
+    stop_time = datetime.datetime.now()
     from_datetime = get_start("installs")
-    to_datetime = get_stop(from_datetime, datetime.datetime.now())
+    to_datetime = get_stop(from_datetime, stop_time)
 
     if to_datetime < from_datetime:
         LOGGER.error("to_datetime (%s) is less than from_endtime (%s).", to_datetime, from_datetime)
         return
+
+    window_capped = to_datetime < stop_time
+    if window_capped: LOGGER.info("Query window capped to %s days (from %s to %s)", MAX_QUERY_WINDOW_DAYS, from_datetime, to_datetime,)
 
     params = dict()
     params["from"] = from_datetime.strftime("%Y-%m-%d %H:%M")
@@ -286,6 +292,10 @@ def sync_installs():
                 bookmark = utils.strptime(record["attributed_touch_time"])
         except:
             LOGGER.error("failed to get attributed_touch_time")
+
+    if window_capped and bookmark <= from_datetime:
+        bookmark = to_datetime
+        LOGGER.info("Advancing installs bookmark to end of capped window: %s", bookmark,)
 
     # Write out state
     utils.update_state(STATE, "installs", bookmark)
