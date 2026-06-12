@@ -12,9 +12,9 @@ LOGGER = singer.get_logger()
 REQUIRED_CONFIG_KEYS = ["app_id", "api_token"]
 
 
-def do_discover():
+def do_discover(client):
     LOGGER.info("Starting discover")
-    catalog = discover()
+    catalog = discover(client)
     json.dump(catalog.to_dict(), sys.stdout, indent=2)
     LOGGER.info("Finished discover")
 
@@ -28,7 +28,7 @@ def main():
 
     with Client(parsed_args.config) as client:
         if parsed_args.discover:
-            do_discover()
+            do_discover(client)
         elif parsed_args.catalog:
             sync(
                 client=client,

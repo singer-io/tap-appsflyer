@@ -19,6 +19,8 @@ from singer import (
 )
 from singer.utils import strftime, strptime_to_utc
 
+from tap_appsflyer.exceptions import appsflyerForbiddenError
+
 LOGGER = get_logger()
 
 
@@ -169,6 +171,24 @@ class BaseStream(ABC):
     def get_url_endpoint(self) -> str:
         """Get the URL endpoint for the stream."""
         return self.url_endpoint
+
+    def check_access(self) -> bool:
+        """
+        Verify that the API credentials have read access to this stream.
+        Returns True if accessible, False if a 403 Forbidden error is raised.
+        """
+        url = self.get_url_endpoint()
+        # Minimal date range - just enough to probe access without fetching real data
+        params = {"from": "2000-01-01 00:00", "to": "2000-01-02 00:00"}
+        try:
+            self.client.probe_request(url, params, dict(self.headers))
+            return True
+        except appsflyerForbiddenError:
+            LOGGER.warning(
+                "Stream '%s' does not have read permission (403), excluding from catalog.",
+                self.__class__.__name__,
+            )
+            return False
 
     @abstractmethod
     def sync(
