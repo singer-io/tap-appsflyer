@@ -25,8 +25,8 @@ def _prune_inaccessible_children(schemas: dict, field_metadata: dict) -> None:
                 name,
                 stream_cls.parent,
             )
-            schemas.pop(name)
-            field_metadata.pop(name)
+            schemas.pop(name, None)
+            field_metadata.pop(name, None)
 
 
 def _apply_access_checks(client, schemas: dict, field_metadata: dict) -> None:

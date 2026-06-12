@@ -186,7 +186,7 @@ class BaseStream(ABC):
         except appsflyerForbiddenError:
             LOGGER.warning(
                 "Stream '%s' does not have read permission (403), excluding from catalog.",
-                self.__class__.__name__,
+                self.tap_stream_id,
             )
             return False
 
