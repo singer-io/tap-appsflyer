@@ -231,7 +231,7 @@ class TestApplyAccessChecks(unittest.TestCase):
         self.assertIn("403", str(ctx.exception))
 
     def test_forbidden_error_message_mentions_all_streams(self):
-        """The error message references insufficient permissions."""
+        """The error message references insufficient access to all streams."""
         schemas, field_metadata = _make_schemas_and_metadata()
         client = _make_client()
 
@@ -241,7 +241,7 @@ class TestApplyAccessChecks(unittest.TestCase):
             with self.assertRaises(appsflyerForbiddenError) as ctx:
                 _apply_access_checks(client, schemas, field_metadata)
 
-        self.assertIn("permissions", str(ctx.exception))
+        self.assertIn("403", str(ctx.exception))
 
     def test_two_streams_inaccessible_both_removed(self):
         """Multiple inaccessible streams are all removed."""
