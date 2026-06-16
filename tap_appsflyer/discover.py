@@ -49,15 +49,12 @@ def _apply_access_checks(client, schemas: dict, field_metadata: dict) -> None:
 
     if not schemas:
         raise appsflyerForbiddenError(
-            "HTTP-error-code: 403, Error: The account credentials supplied do not have "
-            "'read' access to any of the streams supported by the tap. "
-            "Data collection cannot be initiated due to lack of permissions."
+            "HTTP-error-code: 403, Error: The credentials do not have 'read' access to any supported streams."
         )
 
     if inaccessible_streams:
         LOGGER.warning(
-            "The account credentials supplied do not have 'read' access to the "
-            "following stream(s): %s. These streams have been excluded from the catalog.",
+            "No 'read' access to stream(s): %s. Excluded from catalog.",
             ", ".join(inaccessible_streams),
         )
 
