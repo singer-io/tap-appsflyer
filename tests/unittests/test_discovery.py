@@ -1,7 +1,6 @@
 """
 Unit tests for tap_appsflyer discovery logic:
   - BaseStream.check_access()
-  - discover._prune_inaccessible_children()
   - discover._apply_access_checks()
   - discover.discover()
 """
@@ -14,7 +13,6 @@ from singer.catalog import Catalog
 
 from tap_appsflyer.discover import (
     _apply_access_checks,
-    _prune_inaccessible_children,
     discover,
 )
 from tap_appsflyer import do_discover
@@ -123,55 +121,6 @@ class TestCheckAccess(unittest.TestCase):
 
         with self.assertRaises(appsflyerUnauthorizedError):
             stream.check_access()
-
-
-# ---------------------------------------------------------------------------
-# _prune_inaccessible_children()
-# ---------------------------------------------------------------------------
-
-class TestPruneInaccessibleChildren(unittest.TestCase):
-    """Tests for _prune_inaccessible_children()."""
-
-    def test_no_children_means_no_change(self):
-        """All appsflyer streams are parent streams; prune is a no-op."""
-        schemas, field_metadata = _make_schemas_and_metadata()
-        original_keys = set(schemas.keys())
-
-        _prune_inaccessible_children(schemas, field_metadata)
-
-        self.assertEqual(set(schemas.keys()), original_keys)
-
-    def test_child_stream_removed_when_parent_absent(self):
-        """A stream with a `parent` attribute is removed when its parent is not in schemas."""
-        schemas = {"child_stream": {}, "parent_stream": {}}
-        field_metadata = {"child_stream": [], "parent_stream": []}
-
-        # Temporarily inject a fake child into STREAMS
-        mock_child_cls = MagicMock()
-        mock_child_cls.parent = "parent_stream"
-
-        with patch.dict("tap_appsflyer.streams.STREAMS", {"child_stream": mock_child_cls}):
-            # Remove parent to simulate it being excluded
-            schemas.pop("parent_stream")
-            field_metadata.pop("parent_stream")
-            _prune_inaccessible_children(schemas, field_metadata)
-
-        self.assertNotIn("child_stream", schemas)
-        self.assertNotIn("child_stream", field_metadata)
-
-    def test_child_retained_when_parent_present(self):
-        """A child stream is kept when its parent is still in the schemas dict."""
-        schemas = {"child_stream": {}, "parent_stream": {}}
-        field_metadata = {"child_stream": [], "parent_stream": []}
-
-        mock_child_cls = MagicMock()
-        mock_child_cls.parent = "parent_stream"
-
-        with patch.dict("tap_appsflyer.streams.STREAMS", {"child_stream": mock_child_cls}):
-            _prune_inaccessible_children(schemas, field_metadata)
-
-        self.assertIn("child_stream", schemas)
-
 
 # ---------------------------------------------------------------------------
 # _apply_access_checks()

@@ -3,6 +3,7 @@
 ## 1.1.0
   * Exclude 403-forbidden streams from discovery instead of failing [#58](https://github.com/singer-io/tap-appsflyer/pull/58)
   * Add unit tests for discovery access checks.
+  * Upgrade `singer-python` to 6.8.0 and `attrs` to 26.1.0
 
 ## 1.0.0
   * Bump tap to major version [#47](https://github.com/singer-io/tap-appsflyer/pull/47)
