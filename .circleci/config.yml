@@ -25,6 +25,12 @@ jobs:
             uv pip install pytest coverage parameterized
             coverage run -m pytest tests/unittests
             coverage html
+      - run:
+          name: 'Mock Integration Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
+            export STITCH_TAP_PATH=/usr/local/share/virtualenvs/tap-appsflyer/bin/tap-appsflyer
+            python -m pytest tests/mock_integration -v
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
