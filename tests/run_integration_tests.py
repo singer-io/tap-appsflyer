@@ -85,7 +85,9 @@ def main() -> int:
     print("Running:", " ".join([sys.executable, "-m", "pytest", *targets]))
 
     command = [sys.executable, "-m", "pytest", *targets]
-    return subprocess.call(command)
+    env = os.environ.copy()
+    env["INTEGRATION_TEST_MODE"] = mode
+    return subprocess.call(command, env=env)
 
 
 if __name__ == "__main__":
