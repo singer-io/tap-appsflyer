@@ -126,6 +126,7 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
     def _run_mock_sync(self, config=None, state=None):
         run_config = config or self._default_config()
         run_state = state or {}
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = os.path.join(tmpdir, "config.json")
@@ -137,23 +138,26 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
             with open(state_path, "w", encoding="utf-8") as state_file:
                 json.dump(run_state, state_file)
 
-            # Run the repository checkout directly so mock tests validate the code in this workspace.
-            cmd = [
-                sys.executable,
-                "-c",
-                "import tap_appsflyer; tap_appsflyer.main()",
-                "--config",
-                config_path,
-                "--state",
-                state_path,
-            ]
+            tap_cmd = os.getenv("STITCH_TAP_PATH")
+            if tap_cmd:
+                cmd = [tap_cmd, "--config", config_path, "--state", state_path]
+            else:
+                cmd = [
+                    sys.executable,
+                    "-c",
+                    "import tap_appsflyer; tap_appsflyer.main()",
+                    "--config",
+                    config_path,
+                    "--state",
+                    state_path,
+                ]
 
             proc = subprocess.run(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                cwd=os.path.dirname(os.path.dirname(__file__)),
+                cwd=repo_root,
                 timeout=120,
                 check=False,
             )
