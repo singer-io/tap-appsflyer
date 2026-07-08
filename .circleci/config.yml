@@ -47,6 +47,7 @@ jobs:
             source dev_env.sh
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             uv pip install pytest
+            export STITCH_TAP_PATH=/usr/local/share/virtualenvs/tap-appsflyer/bin/tap-appsflyer
             python tests/run_integration_tests.py --mode live
 
 
