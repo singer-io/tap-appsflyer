@@ -145,13 +145,57 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
                 if os.path.exists(candidate_python):
                     runner_python = candidate_python
 
+            driver = (
+                "import json, sys\n"
+                "from tap_appsflyer.client import Client\n"
+                "from tap_appsflyer.discover import discover\n"
+                "from tap_appsflyer.sync import sync\n"
+                "config_path, state_path = sys.argv[1], sys.argv[2]\n"
+                "with open(config_path, 'r', encoding='utf-8') as config_file:\n"
+                "    config = json.load(config_file)\n"
+                "with open(state_path, 'r', encoding='utf-8') as state_file:\n"
+                "    input_state = json.load(state_file)\n"
+                "catalog = discover()\n"
+                "stream_order = ['installs']\n"
+                "if config.get('organic_installs'):\n"
+                "    stream_order.append('organic_installs')\n"
+                "stream_order.append('in_app_events')\n"
+                "resume_stream = input_state.get('this_stream')\n"
+                "if resume_stream is not None:\n"
+                "    if resume_stream not in stream_order:\n"
+                "        raise SystemExit(f'Unknown stream {resume_stream} in state')\n"
+                "    stream_order = stream_order[stream_order.index(resume_stream):]\n"
+                "selected_streams = set(stream_order)\n"
+                "for stream in catalog.streams:\n"
+                "    is_selected = stream.stream in selected_streams\n"
+                "    updated_metadata = []\n"
+                "    for entry in stream.metadata:\n"
+                "        entry = dict(entry)\n"
+                "        metadata = dict(entry.get('metadata', {}))\n"
+                "        metadata['selected'] = is_selected\n"
+                "        entry['metadata'] = metadata\n"
+                "        updated_metadata.append(entry)\n"
+                "    stream.metadata = updated_metadata\n"
+                "state = {}\n"
+                "if resume_stream is not None:\n"
+                "    state['currently_syncing'] = resume_stream\n"
+                "bookmarks = {}\n"
+                "bookmark_keys = {'installs': 'attributed_touch_time', 'organic_installs': 'event_time', 'in_app_events': 'event_time'}\n"
+                "for stream_name, bookmark_key in bookmark_keys.items():\n"
+                "    bookmark_value = input_state.get(stream_name)\n"
+                "    if bookmark_value is not None:\n"
+                "        bookmarks[stream_name] = {bookmark_key: bookmark_value}\n"
+                "if bookmarks:\n"
+                "    state['bookmarks'] = bookmarks\n"
+                "with Client(config) as client:\n"
+                "    sync(client=client, config=config, catalog=catalog, state=state)\n"
+            )
+
             cmd = [
                 runner_python,
                 "-c",
-                "import tap_appsflyer; tap_appsflyer.main()",
-                "--config",
+                driver,
                 config_path,
-                "--state",
                 state_path,
             ]
 
@@ -182,12 +226,23 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
 
         state_messages = [m for m in messages if m.get("type") == "STATE"]
         last_state = state_messages[-1].get("value") if state_messages else None
+        legacy_state = None
+        if last_state is not None:
+            legacy_state = {}
+            bookmarks = last_state.get("bookmarks", {})
+            if "installs" in bookmarks:
+                legacy_state["installs"] = bookmarks["installs"].get("attributed_touch_time")
+            if "organic_installs" in bookmarks:
+                legacy_state["organic_installs"] = bookmarks["organic_installs"].get("event_time")
+            if "in_app_events" in bookmarks:
+                legacy_state["in_app_events"] = bookmarks["in_app_events"].get("event_time")
+            legacy_state["this_stream"] = last_state.get("currently_syncing")
 
         return {
             "returncode": proc.returncode,
             "stdout": proc.stdout,
             "stderr": proc.stderr,
             "messages": messages,
-            "last_state": last_state,
+            "last_state": legacy_state,
             "request_calls": copy.deepcopy(self.__class__._server_calls),
         }
