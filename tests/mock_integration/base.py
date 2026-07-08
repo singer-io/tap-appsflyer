@@ -137,19 +137,16 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
             with open(state_path, "w", encoding="utf-8") as state_file:
                 json.dump(run_state, state_file)
 
-            tap_cmd = os.getenv("STITCH_TAP_PATH")
-            if tap_cmd:
-                cmd = [tap_cmd, "--config", config_path, "--state", state_path]
-            else:
-                cmd = [
-                    sys.executable,
-                    "-c",
-                    "import tap_appsflyer; tap_appsflyer.main()",
-                    "--config",
-                    config_path,
-                    "--state",
-                    state_path,
-                ]
+            # Run the repository checkout directly so mock tests validate the code in this workspace.
+            cmd = [
+                sys.executable,
+                "-c",
+                "import tap_appsflyer; tap_appsflyer.main()",
+                "--config",
+                config_path,
+                "--state",
+                state_path,
+            ]
 
             proc = subprocess.run(
                 cmd,
