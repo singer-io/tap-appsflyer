@@ -7,12 +7,39 @@ Usage examples:
 """
 
 import argparse
+import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-from base import _load_credentials_from_config
+
+def _config_paths():
+    env_path = os.environ.get("TAP_APPSFLYER_CONFIG_JSON") or os.environ.get("APPSFLYER_CONFIG_JSON")
+    if env_path:
+        yield Path(env_path)
+
+    yield Path(__file__).resolve().parent / "config.json"
+    yield Path(__file__).resolve().parents[1] / "config.json"
+
+
+def _load_credentials_from_config():
+    for config_path in _config_paths():
+        if not config_path.is_file():
+            continue
+
+        with config_path.open("r", encoding="utf-8") as config_file:
+            config = json.load(config_file)
+
+        app_id = config.get("app_id")
+        api_token = config.get("api_token")
+        if app_id and api_token:
+            return {
+                "app_id": app_id,
+                "api_token": api_token,
+            }
+
+    return None
 
 
 def _resolve_mode(requested_mode: str) -> str:
