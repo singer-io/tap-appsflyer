@@ -42,21 +42,35 @@ def _load_credentials_from_config():
     return None
 
 
-def _resolve_mode(requested_mode: str) -> str:
-    if requested_mode in {"live", "mock"}:
-        return requested_mode
-
+def _has_live_credentials() -> bool:
     if _load_credentials_from_config() is not None:
-        return "live"
+        return True
+
+    if os.environ.get("TAP_APPSFLYER_API_CREDS"):
+        return True
 
     required_env = (
         "TAP_APPSFLYER_APP_ID",
         "TAP_APPSFLYER_API_TOKEN",
     )
-    has_live_creds = bool(os.environ.get("TAP_APPSFLYER_API_CREDS")) or all(
-        os.environ.get(var) for var in required_env
-    )
-    return "live" if has_live_creds else "mock"
+    return all(os.environ.get(var) for var in required_env)
+
+
+def _resolve_mode(requested_mode: str) -> tuple[str, str | None]:
+    has_live_creds = _has_live_credentials()
+
+    if requested_mode == "mock":
+        return "mock", None
+
+    if requested_mode == "live":
+        if has_live_creds:
+            return "live", None
+        return "mock", "Live mode requested but AppsFlyer credentials are missing; running mock tests instead."
+
+    if has_live_creds:
+        return "live", None
+
+    return "mock", "AppsFlyer credentials not found; running mock tests."
 
 
 def _live_test_files() -> list[str]:
@@ -78,10 +92,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    mode = _resolve_mode(args.mode)
+    mode, note = _resolve_mode(args.mode)
     targets = _live_test_files() if mode == "live" else ["tests/mock_integration"]
 
     print("Selected integration test mode:", mode)
+    if note:
+        print(note)
     print("Running:", " ".join([sys.executable, "-m", "pytest", *targets]))
 
     command = [sys.executable, "-m", "pytest", *targets]

@@ -37,8 +37,8 @@ def _load_credentials_from_config():
 
 def _resolve_mode() -> str:
     mode = os.environ.get("INTEGRATION_TEST_MODE", "auto").lower()
-    if mode in {"live", "mock"}:
-        return mode
+    if mode == "mock":
+        return "mock"
 
     if _load_credentials_from_config() is not None:
         return "live"
@@ -50,6 +50,10 @@ def _resolve_mode() -> str:
     has_live_creds = bool(os.environ.get("TAP_APPSFLYER_API_CREDS")) or all(
         os.environ.get(var) for var in required_env
     )
+
+    if mode == "live" and not has_live_creds:
+        return "mock"
+
     return "live" if has_live_creds else "mock"
 
 

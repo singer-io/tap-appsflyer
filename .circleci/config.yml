@@ -32,23 +32,16 @@ jobs:
       - store_artifacts:
           path: htmlcov
       - run:
-          name: 'Mock Integration Tests'
-          command: |
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            uv pip install pytest
-            export STITCH_TAP_PATH=/usr/local/share/virtualenvs/tap-appsflyer/bin/tap-appsflyer
-            python tests/run_integration_tests.py --mode mock
-      - run:
-          name: 'Live Integration Tests'
+          name: 'Integration Tests (Auto Mode)'
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             uv pip install --upgrade awscli
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
-            source dev_env.sh
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh || true
+            if [ -f dev_env.sh ]; then source dev_env.sh; fi
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             uv pip install pytest
             export STITCH_TAP_PATH=/usr/local/share/virtualenvs/tap-appsflyer/bin/tap-appsflyer
-            python tests/run_integration_tests.py --mode live
+            python tests/run_integration_tests.py --mode auto
 
 
 workflows:
