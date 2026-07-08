@@ -25,7 +25,7 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
 
     @staticmethod
     def _now():
-        return datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+        return datetime.datetime.now(datetime.timezone.utc).replace(second=0, microsecond=0)
 
     @staticmethod
     def _to_api_timestamp(value):
