@@ -139,18 +139,25 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
                 json.dump(run_state, state_file)
 
             tap_cmd = os.getenv("STITCH_TAP_PATH")
+            runner_python = sys.executable
             if tap_cmd:
-                cmd = [tap_cmd, "--config", config_path, "--state", state_path]
-            else:
-                cmd = [
-                    sys.executable,
-                    "-c",
-                    "import tap_appsflyer; tap_appsflyer.main()",
-                    "--config",
-                    config_path,
-                    "--state",
-                    state_path,
-                ]
+                candidate_python = os.path.join(os.path.dirname(tap_cmd), "python")
+                if os.path.exists(candidate_python):
+                    runner_python = candidate_python
+
+            cmd = [
+                runner_python,
+                "-c",
+                "import tap_appsflyer; tap_appsflyer.main()",
+                "--config",
+                config_path,
+                "--state",
+                state_path,
+            ]
+
+            env = os.environ.copy()
+            pythonpath = env.get("PYTHONPATH")
+            env["PYTHONPATH"] = repo_root if not pythonpath else repo_root + os.pathsep + pythonpath
 
             proc = subprocess.run(
                 cmd,
@@ -158,6 +165,7 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
                 stderr=subprocess.PIPE,
                 text=True,
                 cwd=repo_root,
+                env=env,
                 timeout=120,
                 check=False,
             )
