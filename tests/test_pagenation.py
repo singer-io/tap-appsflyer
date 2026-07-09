@@ -10,9 +10,11 @@ except ImportError:
 
 from base import AppsFlyerBaseTest
 
+if PaginationTest is None:
+     raise unittest.SkipTest("tap_tester PaginationTest is unavailable in this environment")
+
 
 @unittest.skip("AppsFlyer raw-data endpoints are date-window based and do not expose page-size pagination semantics.")
-@unittest.skipIf(PaginationTest is None, "tap_tester PaginationTest is unavailable in this environment")
 class AppsFlyerPaginationTest(PaginationTest, AppsFlyerBaseTest):
     @staticmethod
     def name():

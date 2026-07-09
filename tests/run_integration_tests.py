@@ -56,7 +56,7 @@ def _has_live_credentials() -> bool:
     return all(os.environ.get(var) for var in required_env)
 
 
-def _resolve_mode(requested_mode: str) -> tuple[str, str | None]:
+def _resolve_mode(requested_mode: str):
     has_live_creds = _has_live_credentials()
 
     if requested_mode == "mock":

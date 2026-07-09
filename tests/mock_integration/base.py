@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 
 class _ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
+    daemon_threads = True
 
 
 class AppsFlyerMockBaseTest(unittest.TestCase):
