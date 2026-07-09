@@ -16,6 +16,7 @@ class AppsFlyerMockStartDateTest(AppsFlyerMockBaseTest):
 
         result = self._run_mock_sync(config=config)
         self.assertEqual(result["returncode"], 0, msg=result["stderr"])
+        self.assertGreater(len(result["request_calls"]), 0, msg=result["stderr"])
         first_call = result["request_calls"][0]
         from_dt = self._parse_param_datetime(first_call["query"]["from"][0])
         expected = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M:%SZ")
@@ -30,6 +31,7 @@ class AppsFlyerMockStartDateTest(AppsFlyerMockBaseTest):
         result = self._run_mock_sync(config=config, state={"installs": state_dt})
         self.assertEqual(result["returncode"], 0, msg=result["stderr"])
         install_calls = [c for c in result["request_calls"] if "installs_report/v5" in c["path"]]
+        self.assertGreater(len(install_calls), 0, msg=result["stderr"])
         from_dt = self._parse_param_datetime(install_calls[0]["query"]["from"][0])
         expected = datetime.datetime.strptime(state_dt, "%Y-%m-%dT%H:%M:%SZ")
 

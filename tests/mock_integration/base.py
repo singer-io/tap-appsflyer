@@ -208,7 +208,7 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                cwd=repo_root,
+                cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
                 env=env,
                 timeout=120,
                 check=False,
