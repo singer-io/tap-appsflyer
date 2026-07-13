@@ -52,9 +52,9 @@ class DummyStream:
 
 
 class TestSyncHelpers(unittest.TestCase):
-    @patch("tap_appsflyer.sync.singer.write_state")
-    @patch("tap_appsflyer.sync.singer.set_currently_syncing")
-    @patch("tap_appsflyer.sync.singer.get_currently_syncing", return_value="installs")
+    @patch.object(sync_module.singer, "write_state")
+    @patch.object(sync_module.singer, "set_currently_syncing")
+    @patch.object(sync_module.singer, "get_currently_syncing", return_value="installs")
     def test_update_currently_syncing_clears_value(self, mock_get, mock_set, mock_write):
         state = {"currently_syncing": "installs"}
         sync_module.update_currently_syncing(state, None)
@@ -65,11 +65,11 @@ class TestSyncHelpers(unittest.TestCase):
 
 
 class TestSync(unittest.TestCase):
-    @patch("tap_appsflyer.sync.update_currently_syncing")
-    @patch("tap_appsflyer.sync.singer.metadata.to_map", return_value={})
-    @patch("tap_appsflyer.sync.singer.Transformer", return_value=DummyTransformer())
-    @patch("tap_appsflyer.sync.singer.get_currently_syncing", return_value=None)
-    @patch.dict("tap_appsflyer.sync.STREAMS", {"installs": DummyStream}, clear=True)
+    @patch.object(sync_module, "update_currently_syncing")
+    @patch.object(sync_module.singer.metadata, "to_map", return_value={})
+    @patch.object(sync_module.singer, "Transformer", return_value=DummyTransformer())
+    @patch.object(sync_module.singer, "get_currently_syncing", return_value=None)
+    @patch.dict(sync_module.STREAMS, {"installs": DummyStream}, clear=True)
     def test_sync_runs_selected_stream(
         self,
         mock_current,
