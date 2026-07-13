@@ -26,9 +26,9 @@ jobs:
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
             uv pip install pytest coverage
             coverage run -m pytest tests/unittests
-          coverage xml
+            coverage xml
             coverage html
-        - store_artifacts:
+      - store_artifacts:
           path: coverage.xml
       - store_artifacts:
           path: htmlcov
