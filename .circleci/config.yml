@@ -27,14 +27,21 @@ jobs:
             uv pip install pytest coverage
             mkdir -p test_output
             coverage run -m pytest tests/unittests --junitxml=test_output/report.xml
-            coverage xml
+            coverage xml -o coverage.xml
             coverage html
+            coverage report
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
           path: coverage.xml
       - store_artifacts:
           path: htmlcov
+      - run:
+          name: 'Upload Coverage Report'
+          command: |
+            source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
+            uv pip install codecov
+            codecov --file=coverage.xml --flags=unittests
       - run:
           name: 'Integration Tests (Auto Mode)'
           command: |
