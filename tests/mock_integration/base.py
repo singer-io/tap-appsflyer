@@ -188,7 +188,9 @@ class AppsFlyerMockBaseTest(unittest.TestCase):
                 "        bookmarks[stream_name] = {bookmark_key: bookmark_value}\n"
                 "if bookmarks:\n"
                 "    state['bookmarks'] = bookmarks\n"
-                "with Client(config) as client:\n"
+                "_client = Client(config)\n"
+                "_client.base_url = config.get('base_url', _client.base_url)\n"
+                "with _client as client:\n"
                 "    sync(client=client, config=config, catalog=catalog, state=state)\n"
             )
 
