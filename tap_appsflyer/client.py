@@ -58,7 +58,7 @@ class Client:
     def __init__(self, config: Mapping[str, Any]) -> None:
         self.config = config
         self._session = session()
-        self.base_url = config.get("base_url", "https://hq1.appsflyer.com")
+        self.base_url = "https://hq1.appsflyer.com"
 
         config_request_timeout = config.get("request_timeout")
         self.request_timeout = (
