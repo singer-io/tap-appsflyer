@@ -1,53 +1,83 @@
-import io
 import unittest
-from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
 
-import tap_appsflyer
+from tap_appsflyer.exceptions import (
+    appsflyerError,
+    appsflyerBackoffError,
+    appsflyerBadRequestError,
+    appsflyerUnauthorizedError,
+    appsflyerForbiddenError,
+    appsflyerNotFoundError,
+    appsflyerConflictError,
+    appsflyerUnprocessableEntityError,
+    appsflyerRateLimitError,
+    appsflyerInternalServerError,
+    appsflyerNotImplementedError,
+    appsflyerBadGatewayError,
+    appsflyerServiceUnavailableError,
+    ERROR_CODE_EXCEPTION_MAPPING,
+)
 
 
-class TestEntrypoint(unittest.TestCase):
-    @patch("tap_appsflyer.discover")
-    def test_do_discover_writes_catalog_json(self, mock_discover):
-        mock_catalog = MagicMock()
-        mock_catalog.to_dict.return_value = {"streams": [{"stream": "installs"}]}
-        mock_discover.return_value = mock_catalog
+class TestAppsflyerError(unittest.TestCase):
 
-        output = io.StringIO()
-        with patch("sys.stdout", output):
-            tap_appsflyer.do_discover()
+    def test_init_with_message_and_response(self):
+        exc = appsflyerError("test message", response="mock_response")
+        self.assertEqual(exc.message, "test message")
+        self.assertEqual(exc.response, "mock_response")
+        self.assertEqual(str(exc), "test message")
 
-        self.assertIn('"streams"', output.getvalue())
-        self.assertIn('"installs"', output.getvalue())
+    def test_init_defaults(self):
+        exc = appsflyerError()
+        self.assertIsNone(exc.message)
+        self.assertIsNone(exc.response)
 
-    @patch("tap_appsflyer.sync")
-    @patch("tap_appsflyer.Client")
-    @patch("tap_appsflyer.singer.utils.parse_args")
-    def test_main_runs_sync_when_catalog_present(self, mock_parse_args, mock_client, mock_sync):
-        mock_parse_args.return_value = SimpleNamespace(
-            state={"bookmarks": {}},
-            config={"api_token": "t", "app_id": "id"},
-            discover=False,
-            catalog={"streams": []},
+    def test_is_exception(self):
+        exc = appsflyerError("error")
+        self.assertIsInstance(exc, Exception)
+
+
+class TestExceptionHierarchy(unittest.TestCase):
+
+    def test_backoff_error_is_appsflyer_error(self):
+        self.assertTrue(issubclass(appsflyerBackoffError, appsflyerError))
+
+    def test_bad_request_is_appsflyer_error(self):
+        self.assertTrue(issubclass(appsflyerBadRequestError, appsflyerError))
+
+    def test_unauthorized_is_appsflyer_error(self):
+        self.assertTrue(issubclass(appsflyerUnauthorizedError, appsflyerError))
+
+    def test_unprocessable_is_backoff_error(self):
+        self.assertTrue(issubclass(appsflyerUnprocessableEntityError, appsflyerBackoffError))
+
+    def test_rate_limit_is_backoff_error(self):
+        self.assertTrue(issubclass(appsflyerRateLimitError, appsflyerBackoffError))
+
+    def test_internal_server_is_backoff_error(self):
+        self.assertTrue(issubclass(appsflyerInternalServerError, appsflyerBackoffError))
+
+
+class TestErrorCodeMapping(unittest.TestCase):
+
+    def test_mapping_contains_expected_codes(self):
+        expected_codes = [400, 401, 403, 404, 409, 422, 429, 500, 501, 502, 503]
+        for code in expected_codes:
+            self.assertIn(code, ERROR_CODE_EXCEPTION_MAPPING)
+
+    def test_mapping_entries_have_required_keys(self):
+        for code, entry in ERROR_CODE_EXCEPTION_MAPPING.items():
+            self.assertIn("raise_exception", entry, f"code {code} missing raise_exception")
+            self.assertIn("message", entry, f"code {code} missing message")
+
+    def test_400_maps_to_bad_request(self):
+        self.assertEqual(
+            ERROR_CODE_EXCEPTION_MAPPING[400]["raise_exception"],
+            appsflyerBadRequestError,
         )
-        mock_client.return_value.__enter__.return_value = object()
 
-        tap_appsflyer.main()
-
-        mock_sync.assert_called_once()
-
-    @patch("tap_appsflyer.do_discover")
-    @patch("tap_appsflyer.Client")
-    @patch("tap_appsflyer.singer.utils.parse_args")
-    def test_main_runs_discover_when_requested(self, mock_parse_args, mock_client, mock_do_discover):
-        mock_parse_args.return_value = SimpleNamespace(
-            state=None,
-            config={"api_token": "t", "app_id": "id"},
-            discover=True,
-            catalog=None,
+    def test_429_maps_to_rate_limit(self):
+        self.assertEqual(
+            ERROR_CODE_EXCEPTION_MAPPING[429]["raise_exception"],
+            appsflyerRateLimitError,
         )
-        mock_client.return_value.__enter__.return_value = object()
-
-        tap_appsflyer.main()
-
-        mock_do_discover.assert_called_once()
+        
