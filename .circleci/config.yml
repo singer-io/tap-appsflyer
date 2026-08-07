@@ -26,14 +26,16 @@ jobs:
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
             uv pip install pytest coverage
             mkdir -p test_output
-            coverage run -m pytest tests/unittests --junitxml=test_output/report.xml
+            coverage run --source=tap_appsflyer,tests/unittests -m pytest tests/unittests tests/mock_integration --junitxml=test_output/report.xml
             coverage xml -o coverage.xml
             coverage html
-            coverage report
+            coverage report -m --fail-under=99 | tee coverage.txt
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
           path: coverage.xml
+      - store_artifacts:
+          path: coverage.txt
       - store_artifacts:
           path: htmlcov
       - run:
@@ -43,16 +45,20 @@ jobs:
             uv pip install codecov
             codecov --file=coverage.xml --flags=unittests
       - run:
-          name: 'Integration Tests (Auto Mode)'
+          name: 'Integration Tests'
           command: |
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            uv pip install --upgrade awscli
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh || true
-            if [ -f dev_env.sh ]; then source dev_env.sh; fi
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            uv pip install pytest
-            export STITCH_TAP_PATH=/usr/local/share/virtualenvs/tap-appsflyer/bin/tap-appsflyer
-            python tests/run_integration_tests.py --mode auto
+            if [ "$USE_TAPTESTER" = "true" ]; then
+              source /usr/local/share/virtualenvs/tap-tester/bin/activate
+              uv pip install --upgrade awscli
+              aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
+              source dev_env.sh
+              unset USE_STITCH_BACKEND
+              run-test --tap=tap-appsflyer tests
+            else
+              source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
+              uv pip install pytest
+              python -m pytest tests/mock_integration/ -v
+            fi
 
 
 workflows:
