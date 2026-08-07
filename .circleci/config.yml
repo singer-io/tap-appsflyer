@@ -39,12 +39,6 @@ jobs:
       - store_artifacts:
           path: htmlcov
       - run:
-          name: 'Upload Coverage Report'
-          command: |
-            source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
-            uv pip install codecov
-            codecov --file=coverage.xml --flags=unittests
-      - run:
           name: 'Integration Tests'
           command: |
             if [ "$USE_TAPTESTER" = "true" ]; then
