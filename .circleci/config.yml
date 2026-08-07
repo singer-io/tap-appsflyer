@@ -29,7 +29,7 @@ jobs:
             coverage run --source=tap_appsflyer,tests/unittests -m pytest tests/unittests tests/mock_integration --junitxml=test_output/report.xml
             coverage xml -o coverage.xml
             coverage html
-            coverage report -m --fail-under=99 | tee coverage.txt
+            coverage report -m --fail-under=99
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
