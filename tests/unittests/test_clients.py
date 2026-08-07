@@ -215,4 +215,7 @@ class TestClientMakeRequest(unittest.TestCase):
         self.client._session.request.assert_called_once_with(
             "GET", "https://example.com/api", params={"key": "value"}
         )
+<<<<<<< HEAD
         
+=======
+>>>>>>> origin/SAC-31821/python-upgrade

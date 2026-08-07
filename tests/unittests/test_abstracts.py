@@ -422,4 +422,7 @@ class TestStreamGetUrlEndpoint(unittest.TestCase):
         url = stream.get_url_endpoint()
         self.assertIn("myapp", url)
         self.assertIn("organic_installs_report", url)
+<<<<<<< HEAD
         
+=======
+>>>>>>> origin/SAC-31821/python-upgrade

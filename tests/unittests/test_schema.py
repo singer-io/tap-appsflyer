@@ -72,4 +72,7 @@ class TestGetSchemas(unittest.TestCase):
             mdata_map = metadata.to_map(mdata)
             key_props = mdata_map.get((), {}).get("table-key-properties")
             self.assertIsNotNone(key_props, f"{stream_name} missing table-key-properties")
+<<<<<<< HEAD
             
+=======
+>>>>>>> origin/SAC-31821/python-upgrade
