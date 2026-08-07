@@ -29,16 +29,7 @@ jobs:
             coverage run --source=tap_appsflyer,tests/unittests -m pytest tests/unittests tests/mock_integration --junitxml=test_output/report.xml
             coverage xml -o coverage.xml
             coverage html
-<<<<<<< HEAD
-            coverage report -m --fail-under=99
-=======
-      - run:
-          name: 'Coverage Report'
-          command: |
-            source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
-            coverage report -m --fail-under=99
-            coverage html
->>>>>>> origin/SAC-31821/python-upgrade
+            coverage report -m --fail-under=99 | tee coverage.txt
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:

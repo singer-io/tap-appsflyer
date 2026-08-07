@@ -121,7 +121,3 @@ class TestRequiredConfigKeys(unittest.TestCase):
     def test_required_keys(self):
         self.assertIn("app_id", REQUIRED_CONFIG_KEYS)
         self.assertIn("api_token", REQUIRED_CONFIG_KEYS)
-<<<<<<< HEAD
-        
-=======
->>>>>>> origin/SAC-31821/python-upgrade

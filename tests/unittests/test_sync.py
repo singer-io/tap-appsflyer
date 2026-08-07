@@ -162,7 +162,4 @@ class TestSync(unittest.TestCase):
                 )
 
         mock_stream_instance.sync.assert_called_once()
-<<<<<<< HEAD
-        
-=======
->>>>>>> origin/SAC-31821/python-upgrade
+

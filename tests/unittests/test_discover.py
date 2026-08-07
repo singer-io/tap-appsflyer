@@ -80,7 +80,4 @@ class TestDiscover(unittest.TestCase):
 
         with self.assertRaises(Exception):
             discover()
-<<<<<<< HEAD
-            
-=======
->>>>>>> origin/SAC-31821/python-upgrade
+
