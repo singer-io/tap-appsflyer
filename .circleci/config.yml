@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 jobs:
   build:
     docker:
@@ -8,9 +8,9 @@ jobs:
       - run:
           name: 'Setup virtual env'
           command: |
-            uv venv --python 3.9 /usr/local/share/virtualenvs/tap-appsflyer
+            uv venv --python 3.12 /usr/local/share/virtualenvs/tap-appsflyer
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
-            uv pip install -U 'pip<19.2' 'setuptools<51.0.0'
+            uv pip install -U pip setuptools wheel
             uv pip install .[dev]
             uv pip install pylint
       - run:
@@ -26,6 +26,12 @@ jobs:
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
             uv pip install pytest coverage parameterized
             coverage run -m pytest tests/unittests
+            coverage html
+      - run:
+          name: 'Coverage Report'
+          command: |
+            source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
+            coverage report -m --fail-under=99
             coverage html
       - store_test_results:
           path: test_output/report.xml
