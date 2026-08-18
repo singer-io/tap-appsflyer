@@ -16,10 +16,11 @@ class TestDoDiscover(unittest.TestCase):
         mock_catalog = mock.MagicMock()
         mock_catalog.to_dict.return_value = {"streams": []}
         mock_discover.return_value = mock_catalog
+        client = mock.MagicMock()
 
-        do_discover()
+        do_discover(client)
 
-        mock_discover.assert_called_once()
+        mock_discover.assert_called_once_with(client)
         mock_catalog.to_dict.assert_called_once()
         mock_json_dump.assert_called_once()
 
@@ -30,8 +31,9 @@ class TestDoDiscover(unittest.TestCase):
         mock_catalog = mock.MagicMock()
         mock_catalog.to_dict.return_value = {"streams": []}
         mock_discover.return_value = mock_catalog
+        client = mock.MagicMock()
 
-        do_discover()
+        do_discover(client)
 
         args, kwargs = mock_json_dump.call_args
         self.assertEqual(args[1], sys.stdout)

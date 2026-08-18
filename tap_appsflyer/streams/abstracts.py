@@ -19,7 +19,7 @@ from singer import (
 )
 from singer.utils import strftime, strptime_to_utc
 
-from tap_appsflyer.exceptions import appsflyerForbiddenError
+from tap_appsflyer.exceptions import appsflyerForbiddenError, appsflyerNotFoundError
 
 LOGGER = get_logger()
 
@@ -182,6 +182,8 @@ class BaseStream(ABC):
         params = {"from": "2000-01-01 00:00", "to": "2000-01-02 00:00"}
         try:
             self.client.probe_request(url, params, dict(self.headers))
+            return True
+        except appsflyerNotFoundError:
             return True
         except appsflyerForbiddenError:
             LOGGER.warning(

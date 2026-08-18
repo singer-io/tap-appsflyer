@@ -215,3 +215,35 @@ class TestClientMakeRequest(unittest.TestCase):
         self.client._session.request.assert_called_once_with(
             "GET", "https://example.com/api", params={"key": "value"}
         )
+
+
+class TestProbeRequest(unittest.TestCase):
+
+    def setUp(self):
+        self.client = Client({"api_token": "test_token", "app_id": "app123"})
+
+    @mock.patch("tap_appsflyer.client.raise_for_error")
+    def test_probe_request_calls_session_and_raise_for_error(self, mock_raise):
+        """probe_request() makes a GET via _session and passes the response to raise_for_error."""
+        mock_response = mock.MagicMock()
+        self.client._session.request = mock.MagicMock(return_value=mock_response)
+
+        self.client.probe_request("https://example.com/probe", {"from": "2000-01-01"}, {})
+
+        self.client._session.request.assert_called_once()
+        call_kwargs = self.client._session.request.call_args
+        self.assertEqual(call_kwargs[0][0], "GET")
+        self.assertEqual(call_kwargs[0][1], "https://example.com/probe")
+        mock_raise.assert_called_once_with(mock_response)
+
+    @mock.patch("tap_appsflyer.client.raise_for_error")
+    def test_probe_request_injects_auth_header(self, mock_raise):
+        """probe_request() authenticates the request before sending."""
+        mock_response = mock.MagicMock()
+        self.client._session.request = mock.MagicMock(return_value=mock_response)
+
+        self.client.probe_request("https://example.com/probe", {}, {})
+
+        sent_headers = self.client._session.request.call_args[1]["headers"]
+        self.assertIn("Authorization", sent_headers)
+        self.assertTrue(sent_headers["Authorization"].startswith("Bearer "))
