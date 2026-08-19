@@ -80,4 +80,3 @@ class TestDiscover(unittest.TestCase):
 
         with self.assertRaises(Exception):
             discover()
-
