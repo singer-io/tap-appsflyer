@@ -24,12 +24,15 @@ jobs:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
-            uv pip install pytest coverage
-            mkdir -p test_output
-            coverage run --source=tap_appsflyer,tests/unittests -m pytest tests/unittests tests/mock_integration --junitxml=test_output/report.xml
-            coverage xml -o coverage.xml
+            uv pip install pytest coverage parameterized
+            coverage run -m pytest tests/unittests tests/mock_integration
             coverage html
+      - run:
+          name: 'Coverage Report'
+          command: |
+            source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
             coverage report -m --fail-under=99
+            coverage html
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
@@ -37,18 +40,12 @@ jobs:
       - run:
           name: 'Integration Tests'
           command: |
-            if [ "$USE_TAPTESTER" = "true" ]; then
-              source /usr/local/share/virtualenvs/tap-tester/bin/activate
-              uv pip install --upgrade awscli
-              aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
-              source dev_env.sh
-              unset USE_STITCH_BACKEND
-              run-test --tap=tap-appsflyer tests
-            else
-              source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
-              uv pip install pytest
-              python -m pytest tests/mock_integration/ -v
-            fi
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            uv pip install --upgrade awscli
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
+            source dev_env.sh
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            run-test --tap=tap-appsflyer tests
 
 
 workflows:
@@ -68,3 +65,4 @@ workflows:
     jobs:
       - build:
           context: circleci-user
+basic mule
