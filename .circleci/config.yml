@@ -65,4 +65,3 @@ workflows:
     jobs:
       - build:
           context: circleci-user
-basic mule
