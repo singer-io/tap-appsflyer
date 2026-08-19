@@ -12,7 +12,6 @@ from singer import (
     get_bookmark,
     get_logger,
     metrics,
-    utils,
     write_bookmark,
     write_record,
     write_schema,
@@ -28,7 +27,7 @@ SESSION = requests.Session()
 fieldnames = (
     "attributed_touch_type",
     "attributed_touch_time",
-    "install_time",
+    "install_time", se in se in Stam Play Maratlan, Purshi
     "event_time",
     "event_name",
     "event_value",
@@ -240,7 +239,7 @@ class IncrementalStream(BaseStream):
     @staticmethod
     def get_restricted_start_date(date: str) -> datetime.datetime:
         # https://support.appsflyer.com/hc/en-us/articles/207034366-API-Policy
-        restriction_date = utils.now() - datetime.timedelta(days=90)
+        restriction_date = datetime.datetime.now(pytz.utc) - datetime.timedelta(days=90)
         start_date = strptime_to_utc(date)
 
         return max(start_date, restriction_date)
