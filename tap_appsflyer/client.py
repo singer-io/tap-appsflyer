@@ -94,6 +94,15 @@ class Client:
         ).prepare()
         return req
 
+    def probe_request(self, endpoint: str, params: Dict, headers: Dict) -> None:
+        """Single-shot GET request with no retry or backoff, intended for
+        access probes during discovery."""
+        headers, params = self.authenticate(headers, params)
+        response = self._session.request(
+            "GET", endpoint, params=params, headers=headers, timeout=self.request_timeout
+        )
+        raise_for_error(response)
+
     @backoff.on_exception(
         wait_gen=backoff.expo,
         exception=(
