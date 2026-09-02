@@ -175,7 +175,8 @@ class BaseStream(ABC):
     def check_access(self) -> bool:
         """
         Verify that the API credentials have read access to this stream.
-        Returns True if accessible, False if a 403 Forbidden error is raised.
+        Returns True if accessible, False if a 403 Forbidden or 404 Not Found
+        error is raised.
         """
         url = self.get_url_endpoint()
         # Minimal date range - just enough to probe access without fetching real data
@@ -183,12 +184,20 @@ class BaseStream(ABC):
         try:
             self.client.probe_request(url, params, dict(self.headers))
             return True
-        except appsflyerNotFoundError:
-            return True
-        except appsflyerForbiddenError:
+        except appsflyerNotFoundError as exc:
             LOGGER.warning(
-                "Stream '%s' does not have read permission (403), excluding from catalog.",
+                "Stream '%s' not found (404), excluding from catalog. "
+                "This may indicate the stream is not available for this app type. "
+                "HTTP-Error-Message: '%s'",
                 self.tap_stream_id,
+                str(exc)
+            )
+            return False
+        except appsflyerForbiddenError as exc:
+            LOGGER.warning(
+                "Unauthorized Stream: %s, excluding from catalog. HTTP-Error-Message:'%s'",
+                self.tap_stream_id,
+                str(exc)
             )
             return False
 

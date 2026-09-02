@@ -250,15 +250,6 @@ class TestCheckAccess(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_returns_true_on_not_found_error(self):
-        """check_access() returns True when probe returns 404 (endpoint reachable, no data)."""
-        stream, client = self._make_stream("installs")
-        client.probe_request.side_effect = appsflyerNotFoundError("404 Not Found")
-
-        result = stream.check_access()
-
-        self.assertTrue(result)
-
     def test_probe_uses_minimal_date_range(self):
         """check_access() passes a minimal date range in params to avoid real data fetching."""
         stream, client = self._make_stream("installs")
@@ -288,6 +279,15 @@ class TestCheckAccess(unittest.TestCase):
 
         with self.assertRaises(appsflyerUnauthorizedError):
             stream.check_access()
+
+    def test_returns_false_on_not_found_error(self):
+        """check_access() returns False on 404 — stream not available for this app type."""
+        stream, client = self._make_stream("installs")
+        client.probe_request.side_effect = appsflyerNotFoundError("404 Not Found")
+
+        result = stream.check_access()
+
+        self.assertFalse(result)
 
 
 # ---------------------------------------------------------------------------
