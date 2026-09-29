@@ -25,8 +25,9 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-appsflyer/bin/activate
             uv pip install pytest coverage parameterized
-            mkdir -p test_output
-            coverage run --source=tap_appsflyer -m pytest tests/unittests --junitxml=test_output/report.xml
+            coverage run -m pytest tests/unittests
+            python -m pytest tests/mock_integration
+            coverage html
       - run:
           name: 'Coverage Report'
           command: |
